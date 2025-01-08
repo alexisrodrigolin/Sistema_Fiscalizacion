@@ -5,7 +5,7 @@ class Logic:
             "1": "1",  # username: password
             
         }
-        self.subtotal= 0.0
+        self.subtotal= 44600.0
 
         
     def validate_user(self, username, password):

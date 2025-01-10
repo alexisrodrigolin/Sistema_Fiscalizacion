@@ -83,8 +83,11 @@ class main():
 #row 1
         self.P_id.place(relx=0.05, rely=0.07)
         self.P_id_value.place(relx=0.14,rely=0.07)
+
         self.P_plu.place(relx=0.05, rely=0.12)
         self.P_plu_value.place(relx=0.14, rely=0.12)
+
+
         self.P_plu2.place(relx=0.47, rely=0.07)
         self.P_plu2_value.place(relx=0.55, rely=0.07)
         self.P_precio.place(relx=0.47,rely= 0.12)
@@ -134,20 +137,47 @@ class main():
         self.P_fecha.place(relx=0.6426,rely=0.872)
         self.disable_entries(exclude=[self.P_id_value])
         self.app.bind("<Return>", self.buscar)
-    def buscar(self,event):
+    def buscar(self,event=0):
         value= self.P_id_value.get()
-        print(value)
-        print(self.Back.search(codigo=value))
+
+         
+        results=self.Back.search(codigo=value)
+        if results:
+            result=results[0]
+            self.able_entries()
+
+            self.P_id_value.delete(0, tb.END)
+            self.P_id_value.insert(0, result[0])
         
+            self.P_id_value.config(state= "readonly")
+            orden= ['oo','plu', 'plu2', 'marca','descripcion', 'tipo']
+            for x in range(1,5):
+                
+                command= getattr(self, f'P_{orden[x]}_value')
+                if result[x]:
+                    command.insert(0, result[x])
+                else:
+                    continue
+
+        else:
+            self.buscar()    
+        
+
     def menu(self):
             self.delete_widgets()
             self.etiquetas.grid(column=7, row=11, )
             self.precio.grid(column=7,row=10, )
-            self.numberCaja.grid(column=7,  row=3)  
+            self.numberCaja.grid(column=7,  row=3)
+            
     def disable_entries(self, exclude=[]):
         for widget in self.app.winfo_children():
             if isinstance(widget, tb.Entry) and widget not in exclude:
                 widget.config(state="disabled")
+
+    def able_entries(self, exclude=[]):
+        for widget in self.app.winfo_children():
+            if isinstance(widget, tb.Entry) and widget not in exclude:
+                widget.config(state="normal")
 
     def delete_widgets(self):
         for widget in self.app.winfo_children():

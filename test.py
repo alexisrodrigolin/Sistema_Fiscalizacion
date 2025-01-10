@@ -1,43 +1,28 @@
-import mysql.connector as sql
+import ttkbootstrap as ttk
 
-class connection():
-    def __init__(self):
-        self.mydb = sql.connect( 
-        host="127.0.0.1",
-        user="root",
-        password="Taytay8888",
-        database= "test01"
-        )
-        self.cursor= self.mydb.cursor()   
-        self.valid_users = {
-            "1": "1",  # username: password
-            
-        }
-        self.search(77)
-    def search(self, codigo):
-        
-        instructionId= f"SELECT * FROM Art WHERE ID={codigo}"
-        instructionPlu= f"SELECT * FROM Art WHERE PLU= {codigo}"
-  
-        self.cursor.execute(instructionPlu)
-        resultPlu= self.cursor.fetchall()
-        self.cursor.execute(instructionId)       
-        resultId= self.cursor.fetchall()
-        if resultId:
-            print(resultId)
-            return resultId
-        elif resultPlu:
-            print(resultPlu)
-            return resultPlu
-        else:
-            self.create(codigo=codigo)
-    def create(self,codigo):
-        instruction= f"INSERT INTO Art (PLU) VALUES('{codigo}')"
-        self.cursor.execute(instruction)
-        self.mydb.commit()
-        
-    def validate_user(self, username, password):
-        return self.valid_users.get(username) == password
-    
+def mostrar_seleccion():
+    print(f"Opción seleccionada: {selected_option.get()}")
 
-connection()
+# Crear la aplicación
+root = ttk.Window(themename="cosmo")
+
+# Crear una variable para rastrear la opción seleccionada
+selected_option = ttk.StringVar(value="Opción 1")
+
+# Crear el Menubutton
+menubutton = ttk.Menubutton(root, text="Menú", width=15)
+menubutton.grid(row=0, column=0)
+
+# Crear un menú para el Menubutton
+menu = ttk.Menu(menubutton)
+menu.add_radiobutton(label="Opción 1", variable=selected_option, value="Opción 1")
+menu.add_radiobutton(label="Opción 2", variable=selected_option, value="Opción 2")
+menu.add_radiobutton(label="Opción 3", variable=selected_option, value="Opción 3")
+menubutton["menu"] = menu
+
+# Botón para mostrar la opción seleccionada
+btn_mostrar = ttk.Button(root, text="Mostrar selección", command=mostrar_seleccion)
+btn_mostrar.grid(row=1, column=0)
+
+# Iniciar la aplicación
+root.mainloop()

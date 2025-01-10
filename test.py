@@ -1,43 +1,36 @@
-import mysql.connector as sql
+import tkinter as tk
 
-class connection():
-    def __init__(self):
-        self.mydb = sql.connect( 
-        host="127.0.0.1",
-        user="root",
-        password="Taytay8888",
-        database= "test01"
-        )
-        self.cursor= self.mydb.cursor()   
-        self.valid_users = {
-            "1": "1",  # username: password
-            
-        }
-        self.search(77)
-    def search(self, codigo):
-        
-        instructionId= f"SELECT * FROM Art WHERE ID={codigo}"
-        instructionPlu= f"SELECT * FROM Art WHERE PLU= {codigo}"
-  
-        self.cursor.execute(instructionPlu)
-        resultPlu= self.cursor.fetchall()
-        self.cursor.execute(instructionId)       
-        resultId= self.cursor.fetchall()
-        if resultId:
-            print(resultId)
-            return resultId
-        elif resultPlu:
-            print(resultPlu)
-            return resultPlu
+def verificar_y_agregar_simbolo(event):
+    entry = event.widget  # Obtener el widget que generó el evento
+    contenido = entry.get().strip()  # Obtener el contenido y eliminar espacios extra
+
+    # Verificar si el contenido ya tiene el símbolo "$"
+    if contenido.startswith("$ "):
+        # Validar que lo que sigue después del "$ " sea un número válido
+        numero = contenido[2:]  # Quitar "$ "
+        if numero.isdigit() or (numero.replace(".", "", 1).isdigit() and numero.count(".") < 2):
+            return  # Todo está correcto, no se hace nada
         else:
-            self.create(codigo=codigo)
-    def create(self,codigo):
-        instruction= f"INSERT INTO Art (PLU) VALUES('{codigo}')"
-        self.cursor.execute(instruction)
-        self.mydb.commit()
-        
-    def validate_user(self, username, password):
-        return self.valid_users.get(username) == password
-    
+            entry.delete(0, tk.END)  # Si no es un número válido, limpiar
+            return
 
-connection()
+    # Verificar si es un número válido (sin "$ ")
+    if contenido.isdigit() or (contenido.replace(".", "", 1).isdigit() and contenido.count(".") < 2):
+        # Agregar el "$ " al inicio
+        entry.delete(0, tk.END)
+        entry.insert(0, f"$ {contenido}")
+    else:
+        # Si no es un número válido, limpiar el Entry
+        entry.delete(0, tk.END)
+
+# Configuración de la ventana principal
+root = tk.Tk()
+root.title("Validación de Entrada")
+
+# Crear el Entry y vincular el evento <FocusOut>
+entry = tk.Entry(root, font=("Helvetica", 16))
+entry.pack(padx=20, pady=20)
+entry.bind("<FocusOut>", verificar_y_agregar_simbolo)
+
+# Iniciar el bucle principal de la aplicación
+root.mainloop()

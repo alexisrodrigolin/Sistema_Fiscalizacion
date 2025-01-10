@@ -25,6 +25,7 @@ class main():
         self.numberCaja.special= True
         
     def create_widget_precio(self):
+        self.P_control_value= tb.StringVar(value="Opción 1")
         self.delete_widgets()
         self.P_id= tb.Label(self.app, text= "Codigo:", font= ("helvetica", 20), )
         self.P_id_value= tb.Entry(self.app, style= "darkly",width=15)
@@ -42,6 +43,14 @@ class main():
         self.P_tipo_value= tb.Entry(self.app, style= "darkly", font= ("helvetica", 20),width=20)
         self.P_cantidad= tb.Label(self.app, text= "Cantidad:", font= ("helvetica", 20))
         self.P_cantidad_value= tb.Entry(self.app, style= "darkly", font= ("helvetica", 20),width=7)
+        self.P_menubutton = tb.Menubutton(self.app, text="Unidad", width=5,style= "darkly", padding=(5,9))
+        self.P_menu_op = tb.Menu(self.P_menubutton)
+        opciones=["Unidad", "ml","Gramos", "Litros",  "KilosGramos", "Metros", "m³"]
+        for i, opcion in enumerate(opciones, start=1):
+            self.P_menu_op.add_radiobutton(label=opcion, variable=self.P_control_value, value=str(i))
+
+        self.P_menubutton["menu"] = self.P_menu_op
+
         barras=tb.Label(self.app, text="////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////")
         barras1=tb.Label(self.app, text="////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////")
         barras2=tb.Label(self.app, text="////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////")
@@ -83,8 +92,11 @@ class main():
 #row 1
         self.P_id.place(relx=0.05, rely=0.07)
         self.P_id_value.place(relx=0.14,rely=0.07)
+
         self.P_plu.place(relx=0.05, rely=0.12)
         self.P_plu_value.place(relx=0.14, rely=0.12)
+
+
         self.P_plu2.place(relx=0.47, rely=0.07)
         self.P_plu2_value.place(relx=0.55, rely=0.07)
         self.P_precio.place(relx=0.47,rely= 0.12)
@@ -97,6 +109,7 @@ class main():
         self.P_tipo_value.place(relx=0.52, rely=0.27) 
         self.P_cantidad.place(relx=0.7871,rely= 0.23)
         self.P_cantidad_value.place(relx= 0.7871, rely=0.27)  
+        self.P_menubutton.place(relx=0.9102 ,rely=0.27 )
         barras.place(relx=0, rely=0.3411)
         self.P_departamento.place(relx= 0.0156, rely=0.3906)
         self.P_departamento_value.place(relx= 0.163, rely=0.3906)
@@ -134,20 +147,79 @@ class main():
         self.P_fecha.place(relx=0.6426,rely=0.872)
         self.disable_entries(exclude=[self.P_id_value])
         self.app.bind("<Return>", self.buscar)
-    def buscar(self,event):
+        self.P_precio_value.bind("<FocusOut>", self.agregar_letra)
+
+
+
+    def buscar(self,event=0):
         value= self.P_id_value.get()
-        print(value)
-        print(self.Back.search(codigo=value))
-        
+
+         
+        results=self.Back.search(codigo=value)
+        if results:
+            self.app.unbind("<Return>")
+            result=results[0]
+            self.able_entries()
+
+            self.P_id_value.delete(0, tb.END)
+            self.P_id_value.insert(0, result[0])
+            self.P_precio_value.insert(0, f'$ {result[3]}')
+            self.P_id_value.config(state= "readonly")
+            orden= ['plu', 'plu2', 'precio','marca','descripcion', 'tipo', 'cantidad', 'control',
+                     'departamento', 'pasillo', 'costo','iva', 'ganancia', 
+                     "cantidad1",'precioC1', 'cantidad2', 'precioC2','cantidad3', 'precioC3']
+            for x, y in enumerate(orden, start=1):
+                command= getattr(self, f'P_{y}_value')
+                if result[x] and not (x==3 or x==8):
+                    command.insert(0, result[x])
+                else:
+                    continue
+
+        else:
+            self.buscar()    
+
+
+    def agregar_letra(self, event=0):
+        self.P_precio_value = event.widget  # Obtener el widget que generó el evento
+        contenido = self.P_precio_value.get()  # Obtener el contenido
+
+        # Verificar si el contenido ya tiene el símbolo "$"
+        if contenido.startswith("$"):
+            numero = contenido[2:]
+            numero2=contenido[1:]
+            if numero2.replace(".", "", 1).isdigit() and numero2.count(".") < 2:
+                self.P_precio_value.delete(0, tk.END)  
+                self.P_precio_value.insert(0, f"$ {numero2}") 
+                return 
+            else:
+                if numero.replace(".", "", 1).isdigit() and numero.count(".") < 2:
+                    return 
+                else:
+                    self.P_precio_value.delete(0, tk.END)  
+                    return
+            
+
+
+        if contenido.isdigit() or (contenido.replace(".", "", 1).isdigit() and contenido.count(".") < 2):
+            self.P_precio_value.delete(0, tk.END)  
+            self.P_precio_value.insert(0, f"$ {contenido}") 
+        else:
+            self.P_precio_value.delete(0, tk.END)
     def menu(self):
             self.delete_widgets()
             self.etiquetas.grid(column=7, row=11, )
             self.precio.grid(column=7,row=10, )
-            self.numberCaja.grid(column=7,  row=3)  
+            self.numberCaja.grid(column=7,  row=3)
+            
     def disable_entries(self, exclude=[]):
         for widget in self.app.winfo_children():
             if isinstance(widget, tb.Entry) and widget not in exclude:
                 widget.config(state="disabled")
+
+    def able_entries(self, exclude=[]):
+        for widget in self.app.winfo_children():
+            if isinstance(widget, tb.Entry) and widget not in exclude:
+                widget.config(state="normal")
 
     def delete_widgets(self):
         for widget in self.app.winfo_children():

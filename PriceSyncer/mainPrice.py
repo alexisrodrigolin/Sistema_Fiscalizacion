@@ -147,7 +147,7 @@ class main():
         self.P_fecha.place(relx=0.6426,rely=0.872)
         self.disable_entries(exclude=[self.P_id_value])
         self.app.bind("<Return>", self.buscar)
-        self.P_precio_value.bind("<FocusOut>", self.agregar_letra)
+        self.P_precio_value.bind("<FocusOut>", self.agregar_sim)
 
 
 
@@ -179,7 +179,7 @@ class main():
             self.buscar()    
 
 
-    def agregar_letra(self, event=0):
+    def agregar_sim(self, event=0):
         self.P_precio_value = event.widget  # Obtener el widget que generó el evento
         contenido = self.P_precio_value.get()  # Obtener el contenido
 

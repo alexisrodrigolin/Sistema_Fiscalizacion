@@ -22,8 +22,10 @@ class main():
         self.Password.grid(column=7, row=6,sticky= "n")
         self.User.grid(column=7, row=5)
         self.numberCaja.grid(column=7,  row=3)  
+        self.numberCaja.special= True
+        
     def create_widget_precio(self):
-        self.hide_menu()
+        self.delete_widgets()
         self.P_id= tb.Label(self.app, text= "Codigo:", font= ("helvetica", 20), )
         self.P_id_value= tb.Entry(self.app, style= "darkly",width=15)
         self.P_plu= tb.Label(self.app, text= "PLU:", font= ("helvetica", 20))
@@ -31,7 +33,7 @@ class main():
         self.P_plu2= tb.Label(self.app, text= "PLU 2:", font= ("helvetica", 20))
         self.P_plu2_value= tb.Entry(self.app, style= "darkly",width=15)
         self.P_precio= tb.Label(self.app, text= "Precio:", font= ("helvetica", 20))
-        self.P_precio_value= tb.Entry(self.app, style= "darkly", font= ("helvetica", 20))
+        self.P_precio_value= tb.Entry(self.app, style= "darkly", width=18,font= ("helvetica", 20))
         self.P_marca= tb.Label(self.app, text= "Marca:", font= ("helvetica", 20))
         self.P_marca_value= tb.Entry(self.app, style= "darkly", width=15, font= ("helvetica", 20),)
         self.P_descripcion= tb.Label(self.app, text= "Descripcion:", font= ("helvetica", 20))
@@ -73,7 +75,7 @@ class main():
         self.P_guardar= tb.Button(self.app, text="Guardar sin emitir", bootstyle="warning-outline")
         self.P_guardarSin= tb.Button(self.app, text="Guadar y emitir", bootstyle="warning-outline")
         self.P_borrar= tb.Button(self.app, text="Borrar", bootstyle="warning-outline")
-        self.P_menu= tb.Button(self.app, text="Menu", bootstyle="warning-outline")
+        self.P_menu= tb.Button(self.app, text="Menu", bootstyle="warning-outline", command= self.menu)
         self.P_borrarOf= tb.Button(self.app, text="Borrar Oferta", bootstyle="warning-link")
         self.P_buscar= tb.Button(self.app, text="Buscar", bootstyle="warning-outline")
         self.P_fecha= tb.Label(self.app, text="Fecha de Modificacion:", font= ("helvetica", 20), foreground="#7B7A7A" )
@@ -130,12 +132,35 @@ class main():
         self.P_borrarOf.place(relx=0.837,rely=0.5664)
         self.P_buscar.place(relx=0.874,rely=0.0911)
         self.P_fecha.place(relx=0.6426,rely=0.872)
+        self.disable_entries(exclude=[self.P_id_value])
+        self.app.bind("<Return>", self.buscar)
+    def buscar(self,event):
+        value= self.P_id_value.get()
+        print(value)
+        print(self.Back.search(codigo=value))
+        
+    def menu(self):
+            self.delete_widgets()
+            self.etiquetas.grid(column=7, row=11, )
+            self.precio.grid(column=7,row=10, )
+            self.numberCaja.grid(column=7,  row=3)  
+    def disable_entries(self, exclude=[]):
+        for widget in self.app.winfo_children():
+            if isinstance(widget, tb.Entry) and widget not in exclude:
+                widget.config(state="disabled")
 
-    def hide_menu(self):
-            widgets_to_hide= [self.precio, self.etiquetas, self.numberCaja, self.User, self.Password,self.enter]
+    def delete_widgets(self):
+        for widget in self.app.winfo_children():
+            widget.unbind_all
+        for widget in self.app.winfo_children():
+            if not hasattr(widget, 'special'):  
+                widget.destroy()
+        widgets_to_hide= [self.precio, self.etiquetas, self.numberCaja]
+        try:
             for widget in widgets_to_hide:
-                widget.grid_forget()        
-
+                widget.grid_forget() 
+        except:
+            pass
     def check(self, event=None):
         username = self.User.get()  
         password= self.Password.get()
@@ -148,6 +173,9 @@ class main():
         
             self.etiquetas.grid(column=7, row=11, )
             self.precio.grid(column=7,row=10, )
+            self.precio.special= True
+            self.etiquetas.special= True
+            self.app.unbind("<Return>")
             try:
                 self.error.grid_forget()
             except:
@@ -173,8 +201,6 @@ class main():
             
         for z in range(row):
             self.app.rowconfigure(z,weight=1)
-
-
 
         
 

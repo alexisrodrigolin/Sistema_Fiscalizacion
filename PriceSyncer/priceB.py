@@ -5,23 +5,47 @@ class connection():
         self.mydb = sql.connect( 
         host="127.0.0.1",
         user="root",
-        password="Taytay8888",
-        database= "test01"
+        password="",
+        database= "TEST"
         )
+        self.cursor= self.mydb.cursor()   
         self.valid_users = {
             "1": "1",  # username: password
             
         }
+  
+    def search(self, codigo):
+        
+        instructionId= f"SELECT * FROM Art WHERE ID={codigo}"
+        instructionPlu= f"SELECT * FROM Art WHERE PLU= {codigo}"
+        instructionPlu2= f"SELECT * FROM Art WHERE PLU2= {codigo}"
+  
 
-   #     self.new() 
-    def new(self):
-        instruction= "INSERT INTO new_table (Descripcion, PLU, Precio, Fecha_de_modificacion ) VALUES('Coca', '77932221', '23.0', '2025-01-06')"
-        cursor=self.mydb.cursor()
-        cursor.execute(instruction)
 
+        self.cursor.execute(instructionPlu)
+        resultPlu= self.cursor.fetchall()
+        self.cursor.execute(instructionId)       
+        resultId= self.cursor.fetchall()
+        self.cursor.execute(instructionPlu2)
+        resultPlu2= self.cursor.fetchall()
+    
+  
+        if resultId:
+            print(resultId)
+            return resultId
+        elif resultPlu:
+            print(resultPlu)
+            return resultPlu
+        elif resultPlu2:
+            print(resultPlu2)
+            return resultPlu2
+        else:
+            self.create(codigo=codigo)
+    def create(self,codigo):
+        instruction= f"INSERT INTO Art (PLU) VALUES('{codigo}')"
+        self.cursor.execute(instruction)
         self.mydb.commit()
+
     def validate_user(self, username, password):
         return self.valid_users.get(username) == password
     
-
-connection()

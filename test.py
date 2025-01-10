@@ -1,28 +1,36 @@
-import ttkbootstrap as ttk
+import tkinter as tk
 
-def mostrar_seleccion():
-    print(f"Opción seleccionada: {selected_option.get()}")
+def verificar_y_agregar_simbolo(event):
+    entry = event.widget  # Obtener el widget que generó el evento
+    contenido = entry.get().strip()  # Obtener el contenido y eliminar espacios extra
 
-# Crear la aplicación
-root = ttk.Window(themename="cosmo")
+    # Verificar si el contenido ya tiene el símbolo "$"
+    if contenido.startswith("$ "):
+        # Validar que lo que sigue después del "$ " sea un número válido
+        numero = contenido[2:]  # Quitar "$ "
+        if numero.isdigit() or (numero.replace(".", "", 1).isdigit() and numero.count(".") < 2):
+            return  # Todo está correcto, no se hace nada
+        else:
+            entry.delete(0, tk.END)  # Si no es un número válido, limpiar
+            return
 
-# Crear una variable para rastrear la opción seleccionada
-selected_option = ttk.StringVar(value="Opción 1")
+    # Verificar si es un número válido (sin "$ ")
+    if contenido.isdigit() or (contenido.replace(".", "", 1).isdigit() and contenido.count(".") < 2):
+        # Agregar el "$ " al inicio
+        entry.delete(0, tk.END)
+        entry.insert(0, f"$ {contenido}")
+    else:
+        # Si no es un número válido, limpiar el Entry
+        entry.delete(0, tk.END)
 
-# Crear el Menubutton
-menubutton = ttk.Menubutton(root, text="Menú", width=15)
-menubutton.grid(row=0, column=0)
+# Configuración de la ventana principal
+root = tk.Tk()
+root.title("Validación de Entrada")
 
-# Crear un menú para el Menubutton
-menu = ttk.Menu(menubutton)
-menu.add_radiobutton(label="Opción 1", variable=selected_option, value="Opción 1")
-menu.add_radiobutton(label="Opción 2", variable=selected_option, value="Opción 2")
-menu.add_radiobutton(label="Opción 3", variable=selected_option, value="Opción 3")
-menubutton["menu"] = menu
+# Crear el Entry y vincular el evento <FocusOut>
+entry = tk.Entry(root, font=("Helvetica", 16))
+entry.pack(padx=20, pady=20)
+entry.bind("<FocusOut>", verificar_y_agregar_simbolo)
 
-# Botón para mostrar la opción seleccionada
-btn_mostrar = ttk.Button(root, text="Mostrar selección", command=mostrar_seleccion)
-btn_mostrar.grid(row=1, column=0)
-
-# Iniciar la aplicación
+# Iniciar el bucle principal de la aplicación
 root.mainloop()

@@ -10,6 +10,7 @@ class main():
         self.create_widget_menu()
         self.settings(col=15, row=15)
 
+
         self.app.mainloop()
     def create_widget_menu(self):
         self.numberCaja= tb.Label(self.app, text="PriceSyncer", font=("helveica",35,"italic","bold"),anchor="center")
@@ -25,7 +26,7 @@ class main():
         self.numberCaja.special= True
         
     def create_widget_precio(self):
-        self.P_control_value= tb.StringVar(value="Opción 1")
+        self.P_control_value= tb.StringVar(value="1")
         self.delete_widgets()
         self.P_id= tb.Label(self.app, text= "Codigo:", font= ("helvetica", 15), )
         self.P_id_value= tb.Entry(self.app, style= "darkly",width=15)
@@ -45,7 +46,7 @@ class main():
         self.P_cantidad_value= tb.Entry(self.app, style= "darkly", font= ("helvetica", 15), width=7)
 
 
-        self.P_menubutton = tb.Menubutton(self.app, text="Unidad", width=5,style= "darkly", padding=(5,9))
+        self.P_menubutton = tb.Menubutton(self.app, text="ml", width=5,style= "darkly", padding=(5,9))
         self.P_menu_op = tb.Menu(self.P_menubutton)
         opciones=["Unidad", "ml","Gramos", "Litros",  "KilosGramos", "Metros", "m³"]
         for i, opcion in enumerate(opciones, start=1):
@@ -83,11 +84,11 @@ class main():
         self.P_precioC2_value= tb.Entry(self.app, style= "darkly", font= ("helvetica", 15), width=7)
         self.P_precioC3= tb.Label(self.app, text= "Precio x Uni:", font= ("helvetica", 15))
         self.P_precioC3_value= tb.Entry(self.app, style= "darkly", font= ("helvetica",15), width=7)
-        self.P_guardar= tb.Button(self.app, text="Guardar sin emitir", bootstyle="warning-outline")
-        self.P_guardarSin= tb.Button(self.app, text="Guadar y emitir", bootstyle="warning-outline")
+        self.P_guardar= tb.Button(self.app, text="Guardar y emitir", bootstyle="warning-outline")
+        self.P_guardarSin= tb.Button(self.app, text="Guadar sin emitir", bootstyle="warning-outline",command=self.save)
         self.P_borrar= tb.Button(self.app, text="Borrar", bootstyle="warning-outline")
         self.P_menu= tb.Button(self.app, text="Menu", bootstyle="warning-outline", command= self.menu)
-        self.P_borrarOf= tb.Button(self.app, text="Borrar Oferta", bootstyle="warning-link")
+        self.P_borrarOf= tb.Button(self.app, text="Borrar Oferta", bootstyle="warning-link", command=self.borrarOf)
         self.P_buscar= tb.Button(self.app, text="Buscar", bootstyle="warning-outline")
         self.P_fecha= tb.Label(self.app, text="Fecha de Modificacion:", font= ("helvetica", 20), foreground="#7B7A7A" )
 
@@ -113,7 +114,7 @@ class main():
         self.P_tipo_value.place(relx=0.52, rely=0.27, relheight=0.04, relwidth=0.26) 
         self.P_cantidad.place(relx=0.7871,rely= 0.23)
         self.P_cantidad_value.place(relx= 0.7871, rely=0.27, relheight=0.04, relwidth=0.1)  
-        self.P_menubutton.place(relx=0.9102 ,rely=0.27 )
+        self.P_menubutton.place(relx=0.9102 ,rely=0.27,relheight=0.045, relwidth=0.072 )
         barras.place(relx=0, rely=0.3411)
         self.P_departamento.place(relx= 0.0156, rely=0.3906)
         self.P_departamento_value.place(relx= 0.163, rely=0.3906, relheight=0.04, relwidth=0.14)
@@ -153,11 +154,32 @@ class main():
         self.app.bind("<Return>", self.buscar)
         self.P_precio_value.bind("<FocusOut>", self.agregar_sim)
         self.app.bind("<Escape>", self.clean)
-        
+        self.orden= ['plu', 'plu2','precio','marca','descripcion', 'tipo', 'cantidad', 'control',
+                     'departamento', 'pasillo', 'costo','iva', 'ganancia', 
+                     "cantidad1",'precioC1', 'cantidad2', 'precioC2','cantidad3', 'precioC3']      
+        self.colsql= ['PLU','PLU2', 'Precio','Marca','Descripcion', 'Tipo_Sabor','Cantidad', 'Unidad',
+                     'Departamento', 'Pasillo', 'Costo','IVA', 'Ganancia', 
+                     "Cant1",'Precio1', 'Cant2', 'Precio2','Cant3', 'Precio3']  
+    def borrarOf(self):
+        Of= ["cantidad1",'precioC1', 'cantidad2', 'precioC2','cantidad3', 'precioC3']
+        for x in Of:
+            command= getattr(self, f'P_{x}_value')
+            command.delete(0, tb.END)
 
-    def save(self, eti):
-        pass
-        
+    def save(self):
+        command= []
+        precio= self.P_precio_value.get()
+        dic={'Precio':f'{precio[2:]}'}
+        for x in range(len(self.orden)):
+            com=getattr(self, f'P_{self.orden[x]}_value')
+            command.append(com.get())
+            if not (command[x]== '' or x==2):
+                dic.update({f'{self.colsql[x]}':f'{command[x]}'})
+            if command[x]=='':
+                dic.update({f'{self.colsql[x]}':'NULL'})
+        self.Back.guardar(dic, self.P_id_value.get())
+        self.clean()
+
     def buscar(self,event=0):
         value= self.P_id_value.get()
 
@@ -170,12 +192,10 @@ class main():
 
             self.P_id_value.delete(0, tb.END)
             self.P_id_value.insert(0, result[0])
-            self.P_precio_value.insert(0, f'$ {result[3]}')
+            self.P_precio_value.insert(0, f'$ {result[3]:.2f}')
             self.P_id_value.config(state= "readonly")
-            orden= ['plu', 'plu2', 'precio','marca','descripcion', 'tipo', 'cantidad', 'control',
-                     'departamento', 'pasillo', 'costo','iva', 'ganancia', 
-                     "cantidad1",'precioC1', 'cantidad2', 'precioC2','cantidad3', 'precioC3']
-            for x, y in enumerate(orden, start=1):
+
+            for x, y in enumerate(self.orden, start=1):
                 command= getattr(self, f'P_{y}_value')
                 if result[x] and not (x==3 or x==8):
                     command.insert(0, result[x])
@@ -202,10 +222,13 @@ class main():
             numero2=contenido[1:]
             if numero2.replace(".", "", 1).isdigit() and numero2.count(".") < 2:
                 self.P_precio_value.delete(0, tk.END)  
-                self.P_precio_value.insert(0, f"$ {numero2}") 
+                self.P_precio_value.insert(0, f"$ {float(numero2):.2f}") 
+                
                 return 
             else:
                 if numero.replace(".", "", 1).isdigit() and numero.count(".") < 2:
+                    self.P_precio_value.delete(0, tk.END)  
+                    self.P_precio_value.insert(0, f"$ {float(numero):.2f}")
                     return 
                 else:
                     self.P_precio_value.delete(0, tk.END)  
@@ -215,7 +238,7 @@ class main():
 
         if contenido.isdigit() or (contenido.replace(".", "", 1).isdigit() and contenido.count(".") < 2):
             self.P_precio_value.delete(0, tk.END)  
-            self.P_precio_value.insert(0, f"$ {contenido}") 
+            self.P_precio_value.insert(0, f"$ {float(contenido):.2f}") 
         else:
             self.P_precio_value.delete(0, tk.END)
     def menu(self):

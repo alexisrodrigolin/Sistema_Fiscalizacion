@@ -5,7 +5,7 @@ class connection():
         self.mydb = sql.connect( 
         host="127.0.0.1",
         user="root",
-        password="Taytay8888",
+        password="",
         database= "TEST"
         )
         self.cursor= self.mydb.cursor()   

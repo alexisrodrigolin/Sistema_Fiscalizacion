@@ -106,40 +106,40 @@ class main():
 
 
         self.P_marca.place(relx=0.0156, rely=0.23)
-        self.P_marca_value.place(relx=0.0156, rely=0.27) 
+        self.P_marca_value.place(relx=0.0156, rely=0.27, relheight=0.04, relwidth=0.21) 
         self.P_descripcion.place(relx=0.24,rely= 0.23)
-        self.P_descripcion_value.place(relx= 0.24, rely=0.27)      
+        self.P_descripcion_value.place(relx= 0.24, rely=0.27, relheight=0.04, relwidth=0.27)      
         self.P_tipo.place(relx=0.52, rely=0.23)
-        self.P_tipo_value.place(relx=0.52, rely=0.27) 
+        self.P_tipo_value.place(relx=0.52, rely=0.27, relheight=0.04, relwidth=0.26) 
         self.P_cantidad.place(relx=0.7871,rely= 0.23)
-        self.P_cantidad_value.place(relx= 0.7871, rely=0.27)  
+        self.P_cantidad_value.place(relx= 0.7871, rely=0.27, relheight=0.04, relwidth=0.1)  
         self.P_menubutton.place(relx=0.9102 ,rely=0.27 )
         barras.place(relx=0, rely=0.3411)
         self.P_departamento.place(relx= 0.0156, rely=0.3906)
-        self.P_departamento_value.place(relx= 0.163, rely=0.3906,relheight=0.05)
+        self.P_departamento_value.place(relx= 0.163, rely=0.3906, relheight=0.04, relwidth=0.14)
         self.P_pasillo.place(relx=0.0156, rely=0.45)
-        self.P_pasillo_value.place(relx=0.163, rely= 0.45,relheight=0.05)
+        self.P_pasillo_value.place(relx=0.163, rely= 0.45, relheight=0.04, relwidth=0.14)
         self.P_costo.place(relx= 0.36, rely=0.3906)
-        self.P_costo_value.place(relx= 0.4785, rely=0.3906)
+        self.P_costo_value.place(relx= 0.4785, rely=0.3906, relheight=0.04, relwidth=0.1)
         self.P_iva.place(relx= 0.36, rely=0.45)
-        self.P_iva_value.place(relx= 0.4785, rely=0.45)
+        self.P_iva_value.place(relx= 0.4785, rely=0.45, relheight=0.04, relwidth=0.1)
         self.P_ganancia.place(relx=0.6025, rely=0.3906)
-        self.P_ganancia_value.place(relx=0.739 , rely=0.3906)
+        self.P_ganancia_value.place(relx=0.739 , rely=0.3906, relheight=0.04, relwidth=0.14)
         self.P_preReco.place(relx=0.6816, rely=0.4557)
         barras1.place(relx=0, rely=0.5287)
         self.P_preCan.place(relx= 0.0273, rely= 0.5664)
         self.P_cantidad1.place(relx=0.0156, rely=0.63)
-        self.P_cantidad1_value.place(relx=0.135, rely=0.63)
+        self.P_cantidad1_value.place(relx=0.135, rely=0.63, relheight=0.04, relwidth=0.14)
         self.P_cantidad2.place(relx=0.3369, rely=0.63)
-        self.P_cantidad2_value.place(relx=0.455, rely=0.63)
+        self.P_cantidad2_value.place(relx=0.455, rely=0.63, relheight=0.04, relwidth=0.14)
         self.P_cantidad3.place(relx=0.6719, rely=0.63)
-        self.P_cantidad3_value.place(relx=0.79, rely=0.63)
+        self.P_cantidad3_value.place(relx=0.79, rely=0.63, relheight=0.04, relwidth=0.14)
         self.P_precioC1.place(relx=0.0156, rely=0.6914)
-        self.P_precioC1_value.place(relx=0.135, rely=0.6914)
+        self.P_precioC1_value.place(relx=0.135, rely=0.6914, relheight=0.04, relwidth=0.14)
         self.P_precioC2.place(relx=0.3369, rely=0.6914)
-        self.P_precioC2_value.place(relx=0.455, rely=0.6914)
+        self.P_precioC2_value.place(relx=0.455, rely=0.6914, relheight=0.04, relwidth=0.14)
         self.P_precioC3.place(relx=0.6719, rely=0.6914)
-        self.P_precioC3_value.place(relx=0.79, rely=0.6914)
+        self.P_precioC3_value.place(relx=0.79, rely=0.6914, relheight=0.04, relwidth=0.14)
         barras2.place(relx=0, rely=0.7917)
     
         self.P_guardar.place(relx= 0.0283, rely=0.872)
@@ -155,7 +155,9 @@ class main():
         self.app.bind("<Escape>", self.clean)
         
 
-
+    def save(self, eti):
+        pass
+        
     def buscar(self,event=0):
         value= self.P_id_value.get()
 

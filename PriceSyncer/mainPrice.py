@@ -49,7 +49,8 @@ class main():
         for i, opcion in enumerate(opciones, start=1):
             self.P_menu_op.add_radiobutton(label=opcion, variable=self.P_control_value, value=str(i))
 
-        self.P_menubutton["menu"] = self.P_menu_op
+        self.P_menubutton.config(menu=self.P_menu_op)
+
 
         barras=tb.Label(self.app, text="////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////")
         barras1=tb.Label(self.app, text="////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////")
@@ -148,7 +149,8 @@ class main():
         self.disable_entries(exclude=[self.P_id_value])
         self.app.bind("<Return>", self.buscar)
         self.P_precio_value.bind("<FocusOut>", self.agregar_sim)
-
+        self.app.bind("<Escape>", self.clean)
+        
 
 
     def buscar(self,event=0):
@@ -174,10 +176,16 @@ class main():
                     command.insert(0, result[x])
                 else:
                     continue
-
         else:
-            self.buscar()    
-
+            self.buscar() 
+                  
+    def clean(self, event=0):
+        self.P_id_value.config(state= 'normal')
+        for widget in self.app.winfo_children():
+            if isinstance(widget, tb.Entry):
+                widget.delete(0, tb.END)
+        self.app.bind("<Return>", self.buscar)
+        self.disable_entries(exclude=[self.P_id_value])
 
     def agregar_sim(self, event=0):
         self.P_precio_value = event.widget  # Obtener el widget que generó el evento
@@ -215,11 +223,20 @@ class main():
         for widget in self.app.winfo_children():
             if isinstance(widget, tb.Entry) and widget not in exclude:
                 widget.config(state="disabled")
-
+        self.P_guardar.config(state='disabled')
+        self.P_guardarSin.config(state='disabled')
+        self.P_borrar.config(state='disabled')
+        self.P_borrarOf.config(state='disabled')
+        self.P_menubutton.config(state='disabled')
     def able_entries(self, exclude=[]):
         for widget in self.app.winfo_children():
             if isinstance(widget, tb.Entry) and widget not in exclude:
                 widget.config(state="normal")
+        self.P_guardar.config(state='normal')
+        self.P_guardarSin.config(state='normal')
+        self.P_borrar.config(state='normal')
+        self.P_borrarOf.config(state='normal')
+        self.P_menubutton.config(state='normal')
 
     def delete_widgets(self):
         for widget in self.app.winfo_children():

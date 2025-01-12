@@ -36,6 +36,14 @@ class connection():
             self.cursor.execute(instruction)
             self.mydb.commit()
             
+    def guardar( dic,id):
+        net=''
+        for clave, valor in dic.items():
+            net+= f"{clave} = '{valor}', "
+        instruction = f'UPDATE Art SET {net[:-2]} WHERE id = {id}'
+        print(instruction)
+        #self.cursor.execute(instruction)
     def validate_user(self, username, password):
         return self.valid_users.get(username) == password
-    
+
+connection.guardar({'we':'e', 'w':'e'},2)    

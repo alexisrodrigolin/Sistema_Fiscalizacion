@@ -14,7 +14,7 @@ class main():
         self.app.mainloop()
     def create_widget_menu(self):
         self.numberCaja= tb.Label(self.app, text="PriceSyncer", font=("helveica",35,"italic","bold"),anchor="center")
-
+        self.numberCaja.grid(column=7,  row=3)  
         self.User= tb.Entry(self.app, justify="center")
         self.Password= tb.Entry(self.app,justify="center", show="*")
         self.enter= tb.Button(self.app, text="Enter", command=self.check, style= "darkly")
@@ -22,8 +22,7 @@ class main():
         self.enter.grid(column=7,row=7)
         self.Password.grid(column=7, row=6,sticky= "n")
         self.User.grid(column=7, row=5)
-        self.numberCaja.grid(column=7,  row=3)  
-        self.numberCaja.special= True
+
         
     def create_widget_precio(self):
         self.P_control_value= tb.StringVar(value="1")
@@ -153,7 +152,8 @@ class main():
         self.disable_entries(exclude=[self.P_id_value])
         self.app.bind("<Return>", self.buscar)
         self.P_precio_value.bind("<FocusOut>", self.agregar_sim)
-        self.app.bind("<Escape>", self.clean)
+        self.app.bind("<Escape>", self.menu)      
+        
         self.orden= ['plu', 'plu2','precio','marca','descripcion', 'tipo', 'cantidad', 'control',
                      'departamento', 'pasillo', 'costo','iva', 'ganancia', 
                      "cantidad1",'precioC1', 'cantidad2', 'precioC2','cantidad3', 'precioC3']      
@@ -181,9 +181,10 @@ class main():
         self.clean()
 
     def buscar(self,event=0):
+        self.app.bind("<Escape>", self.clean)
         value= self.P_id_value.get()
 
-         
+        
         results=self.Back.search(codigo=value)
         if results:
             self.app.unbind("<Return>")
@@ -210,6 +211,7 @@ class main():
             if isinstance(widget, tb.Entry):
                 widget.delete(0, tb.END)
         self.app.bind("<Return>", self.buscar)
+        self.app.bind("<Escape>", self.menu) 
         self.disable_entries(exclude=[self.P_id_value])
 
     def agregar_sim(self, event=0):
@@ -241,12 +243,19 @@ class main():
             self.P_precio_value.insert(0, f"$ {float(contenido):.2f}") 
         else:
             self.P_precio_value.delete(0, tk.END)
-    def menu(self):
-            self.delete_widgets()
+    def entrada(self):
+            self.precio= tb.Button(self.app,
+            text="Precio", style= "darkly",command=self.create_widget_precio)
+            self.etiquetas= tb.Button(self.app,
+            text = "etiquetas", style= "darkly")
+        
             self.etiquetas.grid(column=7, row=11, )
             self.precio.grid(column=7,row=10, )
+    def menu(self,event=0):
+            self.delete_widgets()       
+            self.numberCaja= tb.Label(self.app, text="PriceSyncer", font=("helveica",35,"italic","bold"),anchor="center")
             self.numberCaja.grid(column=7,  row=3)
-            
+            self.entrada()
     def disable_entries(self, exclude=[]):
         for widget in self.app.winfo_children():
             if isinstance(widget, tb.Entry) and widget not in exclude:
@@ -270,28 +279,14 @@ class main():
         for widget in self.app.winfo_children():
             widget.unbind_all
         for widget in self.app.winfo_children():
-            if not hasattr(widget, 'special'):  
-                widget.destroy()
-        widgets_to_hide= [self.precio, self.etiquetas, self.numberCaja]
-        try:
-            for widget in widgets_to_hide:
-                widget.grid_forget() 
-        except:
-            pass
+ 
+            widget.destroy()
+
     def check(self, event=None):
         username = self.User.get()  
         password= self.Password.get()
         if self.Back.validate_user(username,password):
-            self.precio= tb.Button(self.app,
-            text="Precio", style= "darkly",command=self.create_widget_precio)
-            self.etiquetas= tb.Button(self.app,
-            text = "etiquetas", style= "darkly")
-            
-        
-            self.etiquetas.grid(column=7, row=11, )
-            self.precio.grid(column=7,row=10, )
-            self.precio.special= True
-            self.etiquetas.special= True
+            self.entrada()
             self.app.unbind("<Return>")
             try:
                 self.error.grid_forget()

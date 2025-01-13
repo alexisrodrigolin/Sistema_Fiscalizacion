@@ -1,17 +1,17 @@
-class main():
-    def __init__(self):
-        self.orden= ['plu', 'plu2', 'precio','marca','descripcion', 'tipo', 'cantidad', 'control',
-                     'departamento', 'pasillo', 'costo','iva', 'ganancia', 
-                     "cantidad1",'precioC1', 'cantidad2', 'precioC2','cantidad3', 'precioC3']      
-        self.colsql= ['PLU','PLU2', 'Precio','Marca','Descripcion', 'Tipo_Sabor','Cantidad', 'Unidad',
-                     'Departamento', 'Pasillo', 'Costo','IVA', 'Ganancia', 
-                     "Cant1",'Precio1', 'Cant2', 'Precio2','Cant3', 'Precio3']  
+import ttkbootstrap as ttk
+from ttkbootstrap.dialogs import Messagebox
 
-    def save(self):
-        command= []
-        dic={}
-        for x in range(len(self.orden)):
-            command.append= getattr(self, f'P_{self.orden[x]}_value')
-            dic.update({f'{self.orden[x]}':f'{self.colsql[x]}'})
-        print(command)
-main().save()
+def mostrar_error():
+    Messagebox.show_error(
+        title="Error",
+        message="¡Ocurrió un error crítico!",
+        
+    )
+
+# Ventana principal
+raiz = ttk.Window(themename="superhero")
+boton = ttk.Button(raiz, text="Mostrar Error", command=mostrar_error)
+boton.pack(pady=50, padx=50)
+
+raiz.geometry("400x200")
+raiz.mainloop()

@@ -33,12 +33,13 @@ class caja():
             fieldbackground="#F1EAD7",  
             foreground="black",  
             borderwidth=0,  
-        )
+            font=("Helvetica", 17 ),
+            )
         self.style.configure(
             "Custom.Treeview.Heading",
             background="#F1EAD7",  
             foreground="black",  
-            font=("Helvetica", 18, "bold"),
+            font=("Helvetica", 19, "bold"),
         )
         self.style.configure(
             "Custom.Vertical.TScrollbar",
@@ -92,12 +93,12 @@ class caja():
         scrollbar = tb.Scrollbar(detallado, orient="vertical", style="Custom.Vertical.TScrollbar")
         tree=("Cantidad", "Descripcion", "Monto")
         self.detalles = tb.Treeview(detallado,  columns=tree, show="headings", style="Custom.Treeview",yscrollcommand=scrollbar.set )
-        self.detalles.heading("Cantidad", text="Cantidad", anchor="center")
+        self.detalles.heading("Cantidad", text="Cantidad", anchor="w")
         self.detalles.heading("Descripcion", text= "Descripcion", anchor="w")
         self.detalles.heading("Monto", text= "Precio",anchor="e")
-        self.detalles.column("Cantidad", width=100, anchor="center")
-        self.detalles.column("Descripcion", width=400, anchor="w")
-        self.detalles.column("Monto", width=150, anchor="e")
+        self.detalles.column("Cantidad", width=50, anchor="w")
+        self.detalles.column("Descripcion", width=200, anchor="w")
+        self.detalles.column("Monto", width=100, anchor="e")
     
         
         self.detalles.insert('', 'end', values=(" ", " ", " "))
@@ -108,22 +109,24 @@ class caja():
         scrollbar.config(command=self.detalles.yview)
 
         
-        self.total.grid(column=0,columnspan=7, row= 0, sticky= 'new',)
-        cantidad.grid(column=7 , columnspan=8,row=0, sticky='new')
-        self.entrada.grid(column=2, columnspan=9, row=13, rowspan=15,sticky= "news")
-        detallado.grid(row=2, rowspan=8,column=0, columnspan=6, sticky="wesn")
+        self.total.place(relx=0.0, rely=0.0, relwidth=0.8, relheight=0.2 )
+        cantidad.place(relx=0.8, rely=0.0, relwidth=0.25, relheight=0.2)
+        self.entrada.place(relx=0.2, rely=0.8, relwidth=0.8, relheight=0.2)
+        detallado.place(relx=0.05, rely=0.23, relwidth=0.85, relheight=0.4)
 
-        PushButton = [[ "Precio", 8, 1, "dark"],
-                      ["Cancelar",8,2,"info"],
-                      ["Anular",8,3,"info"],
-                      ["Suspender", 8, 5,"dark"],
-                      ["Facturado", 8, 6, "dark"],
-                      ["Nota Credito", 8, 7, "dark"]
-                      ]
+        PushButton = [[ "Precio", 0.9, 0.25, "dark"],
+                    ["Cancelar", 0.9, 0.32, "info"],
+                    ["Anular", 0.9, 0.39, "info"],
+                    ["Suspender", 0.9, 0.5, "dark"],
+                    ["Facturado", 0.9, 0.57, "dark"],
+                    ["Nota Credito", 0.9, 0.64, "dark"]
+                    ]
         self.app.bind("<Return>", self.items)
+
         for button in PushButton:
             self.create_botton(button[0], button[1], button[2], button[3])
-        print("/////////////////Succeeded///////////////////")
+            print("/////////////////Succeeded///////////////////")
+            self.app.bind("<Return>", self.items)        
     def check(self, event=None):
         username = self.User.get()  
         password= self.Password.get()
@@ -160,7 +163,7 @@ class caja():
             
     def create_botton(self, text1, Col, Row,Style):
         button= tb.Button(self.app, bootstyle=Style, text= text1)
-        button.grid(column=Col, row= Row, sticky= 'news')
+        button.place(relx=Col, rely=Row, relheight=0.07, relwidth=0.1)
         self.buttons.append(button)
     def items(self,event =0):
         codigo= self.entrada.get()

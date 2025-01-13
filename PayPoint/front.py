@@ -112,7 +112,7 @@ class caja():
         self.total.place(relx=0.0, rely=0.0, relwidth=0.8, relheight=0.2 )
         cantidad.place(relx=0.8, rely=0.0, relwidth=0.25, relheight=0.2)
         self.entrada.place(relx=0.2, rely=0.8, relwidth=0.8, relheight=0.2)
-        detallado.place(relx=0.05, rely=0.23, relwidth=0.85, relheight=0.4)
+        detallado.place(relx=0.05, rely=0.23, relwidth=0.8, relheight=0.55)
 
         PushButton = [[ "Precio", 0.9, 0.25, "dark"],
                     ["Cancelar", 0.9, 0.32, "info"],

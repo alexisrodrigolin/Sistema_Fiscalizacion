@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<ifprote>
+ <packet>
+  <cmd>40</cmd>
+   <field>G</field>
+</packet>
+ <packet>
+  <cmd>42</cmd>
+   <field>Niños y pingüinos</field>
+   <field>1234</field>
+   <field>999.9999</field>
+   <field>2100</field>
+   <field>M</field>
+   <field>0</field>
+   <field>0</field>
+   <field>0</field>
+   <field>101</field>
+</packet>
+ <packet>
+  <cmd>45</cmd>
+   <field>T</field>
+ </packet>
+</ifprote>

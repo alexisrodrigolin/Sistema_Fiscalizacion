@@ -1,0 +1,55 @@
+;--------------------------------------------------------
+;	ELLIX30 USB to Serial Port INF
+;
+;	Communication Device Class
+;	Virtual Serial Port
+;	
+;	2012/02/15  SJH   release i
+;--------------------------------------------------------
+
+
+[Version] 
+Signature="$Windows NT$" 
+Class=Ports 
+ClassGuid={4D36E978-E325-11CE-BFC1-08002BE10318} 
+Provider=%STRING_PROVIDER% 
+LayoutFile=layout.inf 
+DriverVer=20/12/2004,1 
+
+[Manufacturer] 
+%STRING_MAUNUFACTURER%=Model 
+
+[Model] 
+%STRING_MODEL%=CDC, USB\VID_1C8A&PID_3001
+
+[DestinationDirs] 
+DefaultDestDir=12 
+
+[CDC.NT] 
+CopyFiles=CDC.NT.Copy 
+AddReg=CDC.NT.AddReg 
+
+[CDC.NT.Copy] 
+usbser.sys,,,0x20
+
+[CDC.NT.AddReg] 
+HKR,,DevLoader,,*ntkern 
+HKR,,NTMPDriver,,usbser.sys 
+HKR,,EnumPropPages32,,"MsPorts.dll,SerialPortPropPageProvider" 
+
+[CDC.NT.Services] 
+AddService = usbser, 0x00000002, Service_Inst 
+
+[Service_Inst] 
+DisplayName = %STRING_DISPLAY_NAME% 
+ServiceType = 1 ; SERVICE_KERNEL_DRIVER 
+StartType = 3 ; SERVICE_DEMAND_START 
+ErrorControl = 1 ; SERVICE_ERROR_NORMAL 
+ServiceBinary = %12%\usbser.sys 
+LoadOrderGroup = Base 
+
+[Strings]
+STRING_PROVIDER = "SAM4s"
+STRING_MAUNUFACTURER = "SAM4s" 
+STRING_MODEL = "ELLIX30 USB Serial Port"  
+STRING_DISPLAY_NAME = "ELLIX30 USB Serial Interface Driver"

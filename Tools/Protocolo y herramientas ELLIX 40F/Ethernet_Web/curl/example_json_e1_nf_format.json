@@ -1,0 +1,38 @@
+{
+    "ifprote": {
+        "packet": [
+            {
+                "cmd": "48", 
+                "field": []
+            }, 
+            {
+                "cmd": "49", 
+                "field": "Texto no fiscal 1"
+            }, 
+            {
+                "cmd": "49", 
+                "field": "normal |W|Doble ancho|w| normal"
+            }, 
+            {
+                "cmd": "49", 
+                "field": "normal |E|Enfatizado|e| normal"
+            }, 
+            {
+                "cmd": "49", 
+                "field": "normal |U|Subrayado|u| normal"
+            }, 
+            {
+                "cmd": "49", 
+                "field": "normal |H|Doble alto|h| normal"
+            }, 
+            {
+                "cmd": "49", 
+                "field": "normal |BE#+!|7790636000290|h| normal"
+            }, 
+            {
+                "cmd": "4a", 
+                "field": []
+            }
+        ]
+    }
+}

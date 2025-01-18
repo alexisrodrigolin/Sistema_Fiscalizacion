@@ -13,8 +13,10 @@ class Logic:
             
         }
         self.subtotal= 0.00
-    def suma(self,precio):
+        self.cant=0
+    def suma(self,precio,cant):
         self.subtotal+= precio
+        self.cant+= cant
         
     def validate_user(self, username, password):
         return self.valid_users.get(username) == password

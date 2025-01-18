@@ -215,10 +215,10 @@ class main():
         self.disable_entries(exclude=[self.P_id_value])
 
     def agregar_sim(self, event=0):
-        self.P_precio_value = event.widget  # Obtener el widget que generó el evento
-        contenido = self.P_precio_value.get()  # Obtener el contenido
+        self.P_precio_value = event.widget  
+        contenido = self.P_precio_value.get()  
 
-        # Verificar si el contenido ya tiene el símbolo "$"
+   
         if contenido.startswith("$"):
             numero = contenido[2:]
             numero2=contenido[1:]

@@ -183,7 +183,9 @@ class main():
     def buscar(self,event=0):
         self.app.bind("<Escape>", self.clean)
         value= self.P_id_value.get()
-
+        if not value.isdigit():
+            self.P_id_value.delete(0, tk.END)
+            return
         
         results=self.Back.search(codigo=value)
         if results:

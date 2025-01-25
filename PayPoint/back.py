@@ -14,10 +14,14 @@ class Logic:
         }
         self.subtotal= 0.00
         self.cant=0
-    def suma(self,precio,cant):
-        self.subtotal+= precio
-        self.cant+= cant
-        
+    def suma(self,precio= 0,cant=0 , refresh= 0):
+        if refresh ==1:
+            self.subtotal=0.00
+            self.cant=0
+        else:
+            self.subtotal+= precio
+            self.cant+= cant
+            
     def validate_user(self, username, password):
         return self.valid_users.get(username) == password
         

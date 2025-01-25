@@ -1,0 +1,14 @@
+curl
+----
+
+Pruebas usando el programa de línea de comando curl.
+
+Editar el archivo _config.bat, ingresar la IP del controlador fiscal, la contraseña de 
+acceso a la web.
+
+Arrastrar en el explorador de Windows, archivo XML o JSON a los archivo .bat
+correspondientes.
+
+Desde la linea de comandos se puede enviar un comando XML de la siguiente forma:
+
+bin\curl -s -S --connect-timeout 1 --max-time 10 --user user:ABCDEF9876543210 192.168.1.1/ifcmd.xml --data-binary @example_xml_e1_z.xml --header "Content-Type: text/xml"

@@ -1,0 +1,34 @@
+{
+    "ifprote": {
+        "packet": [
+            {
+                "cmd": "2a", 
+                "field": "A"
+            }, 
+            {
+                "cmd": "2a", 
+                "field": "C"
+            }, 
+            {
+                "cmd": "2a", 
+                "field": "D"
+            }, 
+            {
+                "cmd": "2a", 
+                "field": "N"
+            }, 
+            {
+                "cmd": "2a", 
+                "field": "P"
+            }, 
+            {
+                "cmd": "59", 
+                "field": []
+            }, 
+            {
+                "cmd": "22", 
+                "field": []
+            }
+        ]
+    }
+}

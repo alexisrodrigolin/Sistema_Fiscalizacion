@@ -127,15 +127,7 @@ class caja():
         for button in PushButton:
             self.create_botton(button[0], button[1], button[2], button[3])
             print("/////////////////Succeeded///////////////////")
-        self.app.bind("<Return>", self.items)
-        self.app.bind("<F4>", self.Resume)
-        self.app.bind("<+>", lambda event: self.almacen(event, "Almacén"))
-        self.app.bind("<F5>", lambda event: self.almacen(event, "Fiambrería"))  
-        self.app.bind("<F6>", lambda event: self.almacen(event, "Verdulería"))              
-        self.app.bind("<F7>", lambda event: self.almacen(event, "Carnicería"))
-        self.app.bind("<F8>", lambda event: self.almacen(event, "Frío/Bolsa"))
-        self.app.bind("<F9>", lambda event: self.almacen(event, "Envase"))
-
+        self.ppbind()
     def check(self, event=None):
         username = self.User.get()  
         password= self.Password.get()
@@ -241,14 +233,30 @@ class caja():
             
         for z in range(row):
             self.app.rowconfigure(z,weight=1)
+    def enter_as_tab(self,event):
+        event.widget.tk_focusNext().focus()
+        return "break"
+    def ppbind(self,event=0):
+        self.app.bind("<Return>", self.items)
+        self.app.bind("<+>", lambda event: self.almacen(event, "Almacén"))
+        self.app.bind("<F3>", lambda event: self.cancelar_anular(event=event, status=1))
+        self.app.bind("<F4>", self.Resume)
+        self.app.bind("<F5>", lambda event: self.almacen(event, "Fiambrería"))  
+        self.app.bind("<F6>", lambda event: self.almacen(event, "Verdulería"))              
+        self.app.bind("<F7>", lambda event: self.almacen(event, "Carnicería"))
+        self.app.bind("<F8>", lambda event: self.almacen(event, "Frío/Bolsa"))
+        self.app.bind("<F9>", lambda event: self.almacen(event, "Envase"))
+        self.app.bind("<F10>", lambda event: self.almacen(event, "Bazar"))
+    
     def Resume(self,event=0):
-        for widget in self.app.winfo_children():
-            widget.unbind_all
+        self.entrada.delete(0, tb.END)    
+        for event_type in ("<Return>",  "<+>", "<F4>", "<F5>", "<F6>", "<F7>", "<F8>", "<F9>", "<F10>"):
+            self.app.unbind(event_type)
         resume = tk.Frame(self.app)
         resume.config(background='#F1EAD7')
         resume.place(relx=0, rely=0, relwidth=1, relheight=1)
         resume.grab_set()
-        self.app.bind("<Escape>", lambda event: resume.destroy())  
+        self.app.bind("<Escape>", lambda event: (resume.destroy(),self.ppbind()))
 
         R_total= tb.Label(resume,text= 'Total:',background='#F1EAD7',foreground='#847C67', font=("helvetica", 70))
         R_total_valor= tb.Label(resume, text= f'$ {self.Bend.subtotal:.2f}', font= ('Helvetica',70),background='#F1EAD7' ,foreground='#847C67')
@@ -260,6 +268,16 @@ class caja():
         R_PagoElec_valor= tb.Entry(resume, style= 'Custom.TButton', font= ("helvetica",25), justify='center')
         R_tarjeta_valor= tb.Entry(resume, style= 'Custom.TButton', font= ("helvetica",25), justify='center')
         R_bonificacion_valor= tb.Entry(resume, style= 'Custom.TButton', font= ("helvetica",25), justify='center')
+        R_monto= tb.Label(resume,text= 'Total recibido:',background='#F1EAD7',foreground='#847C67', font=("helvetica", 30))
+        R_monto_valor= tb.Label(resume, text= f'$ 0.00', font= ('Helvetica',30),background='#F1EAD7' ,foreground='#847C67')
+        R_vuelto= tb.Label(resume,text= 'Vuelto:',background='#F1EAD7',foreground='#847C67', font=("helvetica", 30))
+        R_vuelto_valor= tb.Label(resume, text= f'$ 0.00', font= ('Helvetica',30),background='#F1EAD7' ,foreground='#847C67')
+
+        for widget in (R_efectivo_valor, R_PagoElec_valor, R_tarjeta_valor):
+            widget.bind("<Return>", self.enter_as_tab)
+        R_efectivo_valor.bind("<FocusOut>", lambda event: sim(1,event))
+        R_PagoElec_valor.bind("<FocusOut>", lambda event: sim(2,event))
+        R_tarjeta_valor.bind("<FocusOut>", lambda event: sim(3,event))
         
 
         R_efectivo_valor.place(relx= 0.3244, rely= 0.3945, relwidth=0.17)
@@ -272,28 +290,50 @@ class caja():
         R_bonificacion.place(relx=0.54, rely=0.1966)
         R_total.place(relx=0.032, rely=0.0677)
         R_total_valor.place(relx=0.65, rely=0.0677)
+        R_monto.place(relx= 0.0508, rely= 0.6)
+        R_monto_valor.place(relx= 0.3244, rely= 0.6)
+        R_vuelto.place(relx= 0.0508, rely= 0.66)
+        R_vuelto_valor.place(relx= 0.3244, rely= 0.66)
         
-    def agregar_sim(self, contenido,event=0):
-        if contenido.startswith("$"):
-            numero = contenido[2:]
-            numero2=contenido[1:]
-            if numero2.replace(".", "", 1).isdigit() and numero2.count(".") < 2:
-                
-                return f"$ {float(numero2):.2f}"
-                 
-            else:
-                if numero.replace(".", "", 1).isdigit() and numero.count(".") < 2:
-                    return f"$ {float(numero):.2f}"
+        def sim(status, event=0):  
+            match status:
+                case 1:
+                    widget= R_efectivo_valor
+                case 2: 
+                    widget= R_PagoElec_valor
+                case 3:
+                    widget= R_tarjeta_valor
+            contenido = widget.get()  
+            if contenido.startswith("$"):
+                numero = contenido[2:]
+                numero2=contenido[1:]
+                if numero2.replace(".", "", 1).isdigit() and numero2.count(".") < 2:
+                    widget.delete(0, tk.END)  
+                    widget.insert(0, f"$ {float(numero2):.2f}") 
                 else:
-                    return "$ 0.00"
+                    if numero.replace(".", "", 1).isdigit() and numero.count(".") < 2:
+                        widget.delete(0, tk.END)  
+                        widget.insert(0, f"$ {float(numero):.2f}")
+                    else:
+                        widget.delete(0, tk.END)  
+            elif contenido.isdigit() or (contenido.replace(".", "", 1).isdigit() and contenido.count(".") < 2):
+                widget.delete(0, tk.END)  
+                widget.insert(0, f"$ {float(contenido):.2f}") 
+            else:
+                widget.delete(0, tk.END)
+            R_suma= 0
+            for x in (R_efectivo_valor, R_PagoElec_valor, R_tarjeta_valor):
+                val=x.get()
+                result= float(val[2:]) if not val == "" else 0
+                R_suma+= result
+            R_vueltos= R_suma - self.Bend.subtotal
+            R_vuelto_valor.config(text= f"$ {R_vueltos:.2f}")
+            R_monto_valor.config(text= f"$ {R_suma:.2f}")
+    def cancelar_anular(self, status, event=0):
+        if status ==1:
+            self.Bend.suma(refresh=1)
+            self.create_widget_paypoint()
             
-
-
-        if contenido.isdigit() or (contenido.replace(".", "", 1).isdigit() and contenido.count(".") < 2):
-            return f"$ {float(contenido):.2f}" 
-        else:
-            return '$ 0.00'        
-
 caja()
 
 

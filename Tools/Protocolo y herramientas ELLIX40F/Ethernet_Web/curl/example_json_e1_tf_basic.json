@@ -1,0 +1,32 @@
+{
+    "ifprote": {
+        "packet": [
+            {
+                "cmd": "40", 
+                "field": []
+            }, 
+            {
+                "cmd": "42", 
+                "field": [
+                    "Nombre ítem ", 
+                    2.5, 
+                    12.3456, 
+                    21.0, 
+                    "M", 
+                    null, 
+                    null, 
+                    null, 
+                    101, 
+                    null, 
+                    7, 
+                    null, 
+                    "T"
+                ]
+            }, 
+            {
+                "cmd": "45", 
+                "field": []
+            }
+        ]
+    }
+}

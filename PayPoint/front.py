@@ -1,14 +1,11 @@
 import tkinter as tk
 import ttkbootstrap as tb 
 from ttkbootstrap.constants import *
-from ttkbootstrap.dialogs import Messagebox
 import back
 
 class caja():
 
     def __init__(self, *args, **kwargs):
-
-
         self.Bend= back.Logic()
         self.app = tb.Window(title = "PayPoint",size= [1024, 768] )
         self.app.config(background= '#F1EAD7')
@@ -21,8 +18,8 @@ class caja():
                              font=("Helvetica", 20), 
                              borderwidth=2,
                              relief="solid",
-
 )
+        
         self.style.map(
             "Custom.TButton",
             background=[("active", "#F1EAD7")], 
@@ -60,7 +57,6 @@ class caja():
         self.app.mainloop()
     def create_widget_menu(self):
         self.numberCaja= tb.Label(self.app, text="- Caja 1", font=("helveica",35,"italic","bold"), background="#F1EAD7",anchor="center")
-
         self.User= tb.Entry(self.app, style="Custom.TButton", justify="center")
         self.Password= tb.Entry(self.app, style="Custom.TButton",justify="center", show="*")
         self.enter= tb.Button(self.app, style="Custom.TButton", text="Enter", command=self.check)
@@ -69,7 +65,8 @@ class caja():
         self.Password.grid(column=3, row=6,sticky= "n")
         self.User.grid(column=3, row=5)
         self.numberCaja.grid(column=3,  row=3)   
-        
+        self.User.focus()
+
     def create_widget_paypoint(self):
         self.delete_widgets()
         self.total = tb.Label(self.app,
@@ -120,27 +117,23 @@ class caja():
                     ["Anular", 0.9, 0.39, "info"],
                     ["Suspender", 0.9, 0.5, "dark"],
                     ["Facturado", 0.9, 0.57, "dark"],
-                    ["Nota Credito", 0.9, 0.64, "dark"]
-                    ]
-        
+                    ["Nota Credito", 0.9, 0.64, "dark"]]
+        def create_botton(text1, Col, Row,Style):
+            button= tb.Button(self.app, bootstyle=Style, text= text1)
+            button.place(relx=Col, rely=Row, relheight=0.07, relwidth=0.1)
+            self.buttons.append(button)   
 
         for button in PushButton:
-            self.create_botton(button[0], button[1], button[2], button[3])
+            create_botton(button[0], button[1], button[2], button[3])
             print("/////////////////Succeeded///////////////////")
         self.ppbind()
+
     def check(self, event=None):
         username = self.User.get()  
         password= self.Password.get()
         if self.Bend.validate_user(username,password):
             self.app.unbind("<Return>")
-            self.pay= tb.Button(self.app, style= "Custom.TButton", 
-            text="PayPoint", command= self.create_widget_paypoint)
-            self.sales= tb.Button(self.app, style= "Custom.TButton",
-            text = "SalesOverview", )
-            
-        
-            self.sales.grid(column=3, row=11)
-            self.pay.grid(column=3,row=10)
+            self.M_entrada()
             try:
                 self.error.grid_forget()
             except:
@@ -158,11 +151,14 @@ class caja():
             except:
                 pass
 
-            
-    def create_botton(self, text1, Col, Row,Style):
-        button= tb.Button(self.app, bootstyle=Style, text= text1)
-        button.place(relx=Col, rely=Row, relheight=0.07, relwidth=0.1)
-        self.buttons.append(button)
+    def M_entrada(self):
+        self.pay= tb.Button(self.app, style= "Custom.TButton", 
+        text="PayPoint", command= self.create_widget_paypoint)
+        self.sales= tb.Button(self.app, style= "Custom.TButton",
+        text = "SalesOverview", )   
+        self.sales.grid(column=3, row=11)
+        self.pay.grid(column=3,row=10)
+
     def items(self,event =0):
         content= self.entrada.get()
         position = content.find('*')  # Encuentra la posición del asterisco
@@ -173,31 +169,26 @@ class caja():
                 mult= int(check) 
             else:
                 codigo=content
-
         else:
             codigo=content
             mult=1
         self.entrada.delete(0, tb.END)
         result=self.Bend.item(codigo) if codigo.isdigit() else 0
         if not result:
-            Messagebox.show_warning(
-                title="Error", 
-                message="Articulo NO registrado",
-                alert=True, parent=self.app )
+            self.mostrar_error("Articulo NO Registrado")
         else:    
- 
             net=''
             value= result[5]* mult
             for x in range(3):
                 if result[x]: net+= f"{result[x]} "
-                
             self.detalles.insert('', 'end', values=(f"{mult}", f"{net}", f"$ {value:.2f} "))
-            self.Bend.suma(value,mult)
+
             self.total.config(text=f'$ {self.Bend.subtotal:.2f}')           
             self.cantidad.config(text=f'{self.Bend.cant}')
+            self.Bend.suma(Descripcion=f"{net}", Precio=value, Plu=f"{codigo}", Cantidad=mult)
     def almacen(self,event,type):
         content= self.entrada.get()[:-1] if type== 'Almacén' else self.entrada.get()
-        position = content.find('*')  # Encuentra la posición del asterisco
+        position = content.find('*')
         self.entrada.delete(0, tb.END)
         if position != -1:
             codigo=float(content[(position+1):]) if content[(position+1):].replace(".", "", 1).isdigit() and content[(position+1):].count(".") < 2 else 0
@@ -210,35 +201,35 @@ class caja():
             codigo=float(content[(position+1):]) if content[(position+1):].replace(".", "", 1).isdigit() and content[(position+1):].count else 0
             mult=1
         if codigo==0:
-            Messagebox.show_warning(title='Error',message=f"Verifique el valor: {content}")
+            self.mostrar_error(f"Verifique el valor: {content}")
         else:
             value= mult*codigo
             self.detalles.insert('', 'end', values=(f"{mult}", f"{type}", f"$ {value:.2f} "))
             self.Bend.suma(value,mult)
-            self.total.config(text=f'$ {self.Bend.subtotal:.2f}')           
+            self.total.config(text=f'$ {self.Bend.subtotal:.2f}')
             self.cantidad.config(text=f'{self.Bend.cant}')
-    
+
     def delete_widgets(self):
         for widget in self.app.winfo_children():
             widget.unbind_all
         for widget in self.app.winfo_children():
             widget.destroy()
 
-    
     def columnas_rows(self, col, row):
-        "columnas y rows asignados"
-
         for i in range(col):
-            self.app.columnconfigure(i,weight= 1)
-            
+            self.app.columnconfigure(i,weight= 1)        
         for z in range(row):
             self.app.rowconfigure(z,weight=1)
+    
     def enter_as_tab(self,event):
         event.widget.tk_focusNext().focus()
         return "break"
+    
     def ppbind(self,event=0):
+        self.app.bind("<Escape>", self.menu)
         self.app.bind("<Return>", self.items)
         self.app.bind("<+>", lambda event: self.almacen(event, "Almacén"))
+        self.app.bind("<F2>", lambda event: self.cancelar_anular(event=event, status=0)) 
         self.app.bind("<F3>", lambda event: self.cancelar_anular(event=event, status=1))
         self.app.bind("<F4>", self.Resume)
         self.app.bind("<F5>", lambda event: self.almacen(event, "Fiambrería"))  
@@ -247,17 +238,30 @@ class caja():
         self.app.bind("<F8>", lambda event: self.almacen(event, "Frío/Bolsa"))
         self.app.bind("<F9>", lambda event: self.almacen(event, "Envase"))
         self.app.bind("<F10>", lambda event: self.almacen(event, "Bazar"))
+        self.entrada.focus()
     
+    def menu(self, event=0):
+        if self.Bend.subtotal== 0:    
+            for event_type in ("<Escape>", "<Return>",  "<+>", "<F2>","<F3>","<F4>", "<F5>", "<F6>", "<F7>", "<F8>", "<F9>", "<F10>"):
+                self.app.unbind(event_type)
+            for widget in self.app.winfo_children():
+                widget.destroy()
+            self.numberCaja= tb.Label(self.app, text="- Caja 1", font=("helveica",35,"italic","bold"), background="#F1EAD7",anchor="center")
+            self.numberCaja.grid(column=3,  row=3) 
+            self.M_entrada()
+        else: 
+            self.mostrar_error("Tique Abierto")
+        
     def Resume(self,event=0):
         self.entrada.delete(0, tb.END)    
-        for event_type in ("<Return>",  "<+>", "<F4>", "<F5>", "<F6>", "<F7>", "<F8>", "<F9>", "<F10>"):
+        for event_type in ("<Return>",  "<+>","<F2>","<F3>", "<F4>", "<F5>", "<F6>", "<F7>", "<F8>", "<F9>", "<F10>"):
             self.app.unbind(event_type)
         resume = tk.Frame(self.app)
         resume.config(background='#F1EAD7')
         resume.place(relx=0, rely=0, relwidth=1, relheight=1)
         resume.grab_set()
         self.app.bind("<Escape>", lambda event: (resume.destroy(),self.ppbind()))
-
+        R_bonificacion_valor= tb.Entry(resume, style= 'Custom.TButton', font= ("helvetica",25), justify='center')        
         R_total= tb.Label(resume,text= 'Total:',background='#F1EAD7',foreground='#847C67', font=("helvetica", 70))
         R_total_valor= tb.Label(resume, text= f'$ {self.Bend.subtotal:.2f}', font= ('Helvetica',70),background='#F1EAD7' ,foreground='#847C67')
         R_bonificacion= tb.Label(resume, text='Bonificación %', font= ('Helvetica',30),background='#F1EAD7' ,foreground='#847C67')
@@ -267,19 +271,15 @@ class caja():
         R_efectivo_valor= tb.Entry(resume, style= 'Custom.TButton', font= ("helvetica",25), justify='center')
         R_PagoElec_valor= tb.Entry(resume, style= 'Custom.TButton', font= ("helvetica",25), justify='center')
         R_tarjeta_valor= tb.Entry(resume, style= 'Custom.TButton', font= ("helvetica",25), justify='center')
-        R_bonificacion_valor= tb.Entry(resume, style= 'Custom.TButton', font= ("helvetica",25), justify='center')
         R_monto= tb.Label(resume,text= 'Total recibido:',background='#F1EAD7',foreground='#847C67', font=("helvetica", 30))
         R_monto_valor= tb.Label(resume, text= f'$ 0.00', font= ('Helvetica',30),background='#F1EAD7' ,foreground='#847C67')
         R_vuelto= tb.Label(resume,text= 'Vuelto:',background='#F1EAD7',foreground='#847C67', font=("helvetica", 30))
         R_vuelto_valor= tb.Label(resume, text= f'$ 0.00', font= ('Helvetica',30),background='#F1EAD7' ,foreground='#847C67')
-
         for widget in (R_efectivo_valor, R_PagoElec_valor, R_tarjeta_valor):
             widget.bind("<Return>", self.enter_as_tab)
         R_efectivo_valor.bind("<FocusOut>", lambda event: sim(1,event))
         R_PagoElec_valor.bind("<FocusOut>", lambda event: sim(2,event))
         R_tarjeta_valor.bind("<FocusOut>", lambda event: sim(3,event))
-        
-
         R_efectivo_valor.place(relx= 0.3244, rely= 0.3945, relwidth=0.17)
         R_PagoElec_valor.place(relx= 0.3244, rely= 0.4557, relwidth=0.17)
         R_tarjeta_valor.place(relx= 0.3244, rely= 0.5182, relwidth=0.17)
@@ -294,7 +294,8 @@ class caja():
         R_monto_valor.place(relx= 0.3244, rely= 0.6)
         R_vuelto.place(relx= 0.0508, rely= 0.66)
         R_vuelto_valor.place(relx= 0.3244, rely= 0.66)
-        
+        R_efectivo_valor.focus()       
+
         def sim(status, event=0):  
             match status:
                 case 1:
@@ -329,11 +330,32 @@ class caja():
             R_vueltos= R_suma - self.Bend.subtotal
             R_vuelto_valor.config(text= f"$ {R_vueltos:.2f}")
             R_monto_valor.config(text= f"$ {R_suma:.2f}")
+
     def cancelar_anular(self, status, event=0):
         if status ==1:
             self.Bend.suma(refresh=1)
             self.create_widget_paypoint()
-            
+        else:
+            pass
+
+    def mostrar_error(self, mensaje):
+        error_window = tb.Toplevel(self.app)
+        error_window.title("Error")
+        error_window.geometry("500x300")
+        error_window.resizable(False, False)  
+        error_window.config(background="#39384B")
+        ancho_pantalla = error_window.winfo_screenwidth()
+        alto_pantalla = error_window.winfo_screenheight()
+        pos_x = (ancho_pantalla - 500) // 2
+        pos_y = (alto_pantalla - 300) // 2
+        error_window.geometry(f"{500}x{300}+{pos_x}+{pos_y}")
+        label = tb.Label(error_window, text=f" ⚠ ⚠  {mensaje}  🚨",font=("Arial", 30,),  justify="center", foreground="#AB9F9F", background="#39384B")
+        label.pack(pady=30)
+        close_button = tb.Button(error_window, text="Cerrar", style= "secondary",command=error_window.destroy)
+        close_button.pack(pady=30)
+        error_window.bind("<Escape>", lambda event: (error_window.destroy(), self.ppbind()))
+        error_window.transient()  
+        error_window.attributes("-topmost", True) 
+        error_window.grab_set()
+        error_window.wait_window()
 caja()
-
-

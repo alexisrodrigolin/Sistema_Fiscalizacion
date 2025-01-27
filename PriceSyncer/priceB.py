@@ -10,12 +10,9 @@ class connection():
         )
         self.cursor= self.mydb.cursor()   
         self.valid_users = {
-            "1": "1",  # username: password
-            
-        }
+            "1": "1",  }
   
     def search(self, codigo):
-        
         instructionId= f"SELECT * FROM Art WHERE ID={codigo}"
         instructionPlu= f"SELECT * FROM Art WHERE PLU= {codigo}"
         instructionPlu2= f"SELECT * FROM Art WHERE PLU2= {codigo}"
@@ -35,7 +32,7 @@ class connection():
             instruction= f"INSERT INTO Art (PLU) VALUES('{codigo}')"
             self.cursor.execute(instruction)
             self.mydb.commit()
-            
+
     def guardar(self, dic,id):
         net=''
         for clave, valor in dic.items():
@@ -46,8 +43,6 @@ class connection():
         instruction = f'UPDATE Art SET {net[:-2]} WHERE id = {id}'
         self.cursor.execute(instruction)
         self.mydb.commit()
-
-        #self.cursor.execute(instruction)
     def validate_user(self, username, password):
         return self.valid_users.get(username) == password
 

@@ -9,19 +9,22 @@ class Logic:
         )
         self.cursor= self.mydb.cursor()   
         self.valid_users = {
-            "1": "1",  # username: password
-            
+            "1": "1",  
         }
         self.subtotal= 0.00
         self.cant=0
-    def suma(self,precio= 0,cant=0 , refresh= 0):
+        self.tique=[]
+    
+    def suma(self,Descripcion='',Plu='',Precio= 0,Cantidad=0 , refresh= 0):
         if refresh ==1:
             self.subtotal=0.00
             self.cant=0
         else:
-            self.subtotal+= precio
-            self.cant+= cant
-            
+            self.subtotal+= Precio
+            self.cant+= Cantidad
+            item=(Descripcion,Precio,Plu,Cantidad)
+            self.tique.append(item)
+
     def validate_user(self, username, password):
         return self.valid_users.get(username) == password
         
@@ -38,4 +41,9 @@ class Logic:
             return result2
         else:
             return 0
-        
+    def table(self):
+        self.cursor.execute("""
+        CREATE TABLE IF NOT EXISTS productos (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        """ + ", ".join([f"item_{i} VARCHAR(40)" for i in range(1, 101)]) + """)""")
+        self.mydb.commit()

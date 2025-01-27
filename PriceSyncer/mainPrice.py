@@ -6,11 +6,8 @@ class main():
     def __init__(self):
         self.Back= priceB.connection()
         self.app= tb.Window(themename= "darkly",title= "PriceSyncer",size= [1024, 768])
-
         self.create_widget_menu()
         self.settings(col=15, row=15)
-
-
         self.app.mainloop()
     def create_widget_menu(self):
         self.numberCaja= tb.Label(self.app, text="PriceSyncer", font=("helveica",35,"italic","bold"),anchor="center")
@@ -150,9 +147,10 @@ class main():
         self.P_buscar.place(relx=0.874,rely=0.0911)
         self.P_fecha.place(relx=0.6426,rely=0.872)
         self.disable_entries(exclude=[self.P_id_value])
-        self.app.bind("<Return>", self.buscar)
+
         self.P_precio_value.bind("<FocusOut>", self.agregar_sim)
-        self.app.bind("<Escape>", self.menu)      
+        self.app.bind("<Escape>", self.menu)  
+        self.app.bind("<Return>", self.buscar)    
         
         self.orden= ['plu', 'plu2','precio','marca','descripcion', 'tipo', 'cantidad', 'control',
                      'departamento', 'pasillo', 'costo','iva', 'ganancia', 
@@ -255,6 +253,8 @@ class main():
             self.precio.grid(column=7,row=10, )
     def menu(self,event=0):
             self.delete_widgets()       
+            self.app.unbind("<Return>")
+            self.app.unbind("<Escape>")
             self.numberCaja= tb.Label(self.app, text="PriceSyncer", font=("helveica",35,"italic","bold"),anchor="center")
             self.numberCaja.grid(column=7,  row=3)
             self.entrada()
@@ -279,9 +279,6 @@ class main():
 
     def delete_widgets(self):
         for widget in self.app.winfo_children():
-            widget.unbind_all
-        for widget in self.app.winfo_children():
- 
             widget.destroy()
 
     def check(self, event=None):

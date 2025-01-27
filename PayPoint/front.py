@@ -12,10 +12,9 @@ class caja():
         self.app.config(background='#F1EAD7')
         self.app.state('zoomed')
 
-        # 获取屏幕分辨率
         screen_width = self.app.winfo_screenwidth()
-        # 根据屏幕分辨率计算字体缩放比例
-        self.font_scale= screen_width/2560 +0.2
+
+        self.font_scale= screen_width/2560 + 0.17
 
         self.style = tb.Style()
         self.style.configure("Custom.TButton",

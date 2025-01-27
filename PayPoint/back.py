@@ -4,7 +4,7 @@ class Logic:
         self.mydb = sql.connect( 
         host="127.0.0.1",
         user="root",
-        password="",
+        password="Taytay8888",
         database= "TEST"
         )
         self.cursor= self.mydb.cursor()   
@@ -20,6 +20,7 @@ class Logic:
             self.subtotal=0.00
             self.cant=0
         else:
+            print("done")
             self.subtotal+= Precio
             self.cant+= Cantidad
             item=(Descripcion,Precio,Plu,Cantidad)

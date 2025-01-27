@@ -1,26 +1,24 @@
-import mysql.connector
+import tkinter as tk
+from tkinter import ttk
 
-# Conexión a la base de datos
-conn = mysql.connector.connect(
-    host="localhost",       # Cambia por tu host si es necesario
-    user="root",      # Cambia por tu usuario de MySQL
-    password="", # Cambia por tu contraseña
-    database="TEST" # Cambia por tu base de datos
-)
-cursor = conn.cursor()
-# Crear tabla con 100 columnas VARCHAR(40)
-# Nombre de la tabla: productos
-cursor.execute("""
-CREATE TABLE IF NOT EXISTS Facturado (
-    `id` SMALLINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    `Subtotal` VARCHAR(10), `Hora` TIME, `Continue` TINYINT,
-    """ + ", ".join([f"item_{i} VARCHAR(40)" for i in range(1, 101)]) + """)""")
+def ajustar_escala(event):
+    # Ajusta el escalado según el ancho de la ventana principal
+    escala = event.width / 800  # Ajusta 800 según el diseño inicial
+    root.tk.call('tk', 'scaling', escala)  # Escalado global en Tkinter
 
+# Crear ventana principal
+root = tk.Tk()
+root.geometry("800x600")  # Tamaño inicial de referencia
 
-conn.commit()
+# Crear algunos widgets
+label = tk.Label(root, text="Texto dinámico", font=("Helvetica", 20))
+label.pack(pady=20)
 
-print("Se crearon las 1000 filas con 100 columnas, todas con valores NULL.")
+boton = ttk.Button(root, text="Soy un botón dinámico")
+boton.pack(pady=10)
 
-# Cerrar conexión
-cursor.close()
-conn.close()
+# Vincular evento de redimensionamiento
+root.bind("<Configure>", ajustar_escala)
+
+# Iniciar el bucle principal
+root.mainloop()

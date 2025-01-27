@@ -182,10 +182,9 @@ class caja():
             for x in range(3):
                 if result[x]: net+= f"{result[x]} "
             self.detalles.insert('', 'end', values=(f"{mult}", f"{net}", f"$ {value:.2f} "))
-
+            self.Bend.suma(Descripcion=f"{net}", Precio=value, Plu=f"{codigo}", Cantidad=mult)
             self.total.config(text=f'$ {self.Bend.subtotal:.2f}')           
             self.cantidad.config(text=f'{self.Bend.cant}')
-            self.Bend.suma(Descripcion=f"{net}", Precio=value, Plu=f"{codigo}", Cantidad=mult)
     def almacen(self,event,type):
         content= self.entrada.get()[:-1] if type== 'Almacén' else self.entrada.get()
         position = content.find('*')
@@ -210,8 +209,7 @@ class caja():
             self.cantidad.config(text=f'{self.Bend.cant}')
 
     def delete_widgets(self):
-        for widget in self.app.winfo_children():
-            widget.unbind_all
+        self.ppunbind()
         for widget in self.app.winfo_children():
             widget.destroy()
 
@@ -239,11 +237,10 @@ class caja():
         self.app.bind("<F9>", lambda event: self.almacen(event, "Envase"))
         self.app.bind("<F10>", lambda event: self.almacen(event, "Bazar"))
         self.entrada.focus()
-    
+        print("7")
     def menu(self, event=0):
         if self.Bend.subtotal== 0:    
-            for event_type in ("<Escape>", "<Return>",  "<+>", "<F2>","<F3>","<F4>", "<F5>", "<F6>", "<F7>", "<F8>", "<F9>", "<F10>"):
-                self.app.unbind(event_type)
+            self.ppunbind()
             for widget in self.app.winfo_children():
                 widget.destroy()
             self.numberCaja= tb.Label(self.app, text="- Caja 1", font=("helveica",35,"italic","bold"), background="#F1EAD7",anchor="center")
@@ -251,11 +248,12 @@ class caja():
             self.M_entrada()
         else: 
             self.mostrar_error("Tique Abierto")
-        
-    def Resume(self,event=0):
-        self.entrada.delete(0, tb.END)    
+    def ppunbind(self):
         for event_type in ("<Return>",  "<+>","<F2>","<F3>", "<F4>", "<F5>", "<F6>", "<F7>", "<F8>", "<F9>", "<F10>"):
             self.app.unbind(event_type)
+    def Resume(self,event=0):
+        self.entrada.delete(0, tb.END)    
+        self.ppunbind()
         resume = tk.Frame(self.app)
         resume.config(background='#F1EAD7')
         resume.place(relx=0, rely=0, relwidth=1, relheight=1)
@@ -265,7 +263,7 @@ class caja():
         R_total= tb.Label(resume,text= 'Total:',background='#F1EAD7',foreground='#847C67', font=("helvetica", 70))
         R_total_valor= tb.Label(resume, text= f'$ {self.Bend.subtotal:.2f}', font= ('Helvetica',70),background='#F1EAD7' ,foreground='#847C67')
         R_bonificacion= tb.Label(resume, text='Bonificación %', font= ('Helvetica',30),background='#F1EAD7' ,foreground='#847C67')
-        R_efectivo= tb.Label(resume, text='+ Efectivo:' ,font= ('Helvetica',30),background='#F1EAD7' ,foreground='#847C67')
+        R_efectivo= tb.Label(resume, text='+ Efectivo:' ,font= ('Helvetica',10),background='#F1EAD7' ,foreground='#847C67')
         R_PagoElec= tb.Label(resume, text='+ Pago Virtual:' ,font= ('Helvetica',30),background='#F1EAD7' ,foreground='#847C67')
         R_Tarjeta= tb.Label(resume, text='+ Tarjeta:' ,font= ('Helvetica',30),background='#F1EAD7' ,foreground='#847C67')
         R_efectivo_valor= tb.Entry(resume, style= 'Custom.TButton', font= ("helvetica",25), justify='center')
@@ -340,6 +338,7 @@ class caja():
 
     def mostrar_error(self, mensaje):
         error_window = tb.Toplevel(self.app)
+        self.ppunbind()
         error_window.title("Error")
         error_window.geometry("500x300")
         error_window.resizable(False, False)  
@@ -353,7 +352,7 @@ class caja():
         label.pack(pady=30)
         close_button = tb.Button(error_window, text="Cerrar", style= "secondary",command=error_window.destroy)
         close_button.pack(pady=30)
-        error_window.bind("<Escape>", lambda event: (error_window.destroy(), self.ppbind()))
+        self.app.bind("<Escape>", lambda event: (error_window.destroy(), self.ppbind()))
         error_window.transient()  
         error_window.attributes("-topmost", True) 
         error_window.grab_set()

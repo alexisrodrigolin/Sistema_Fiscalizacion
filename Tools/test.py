@@ -1,24 +1,15 @@
 import tkinter as tk
-from tkinter import ttk
+from tkcalendar import DateEntry
 
-def ajustar_escala(event):
-    # Ajusta el escalado según el ancho de la ventana principal
-    escala = event.width / 800  # Ajusta 800 según el diseño inicial
-    root.tk.call('tk', 'scaling', escala)  # Escalado global en Tkinter
-
-# Crear ventana principal
 root = tk.Tk()
-root.geometry("800x600")  # Tamaño inicial de referencia
+root.geometry("300x200")
 
-# Crear algunos widgets
-label = tk.Label(root, text="Texto dinámico", font=("Helvetica", 20))
-label.pack(pady=20)
+# Crear el DateEntry
+cal = DateEntry(root, date_pattern="yyyy-mm-dd")
+cal.pack(pady=50)
 
-boton = ttk.Button(root, text="Soy un botón dinámico")
-boton.pack(pady=10)
+# Cambiar el fondo del Entry interno y del calendario
+#cal._entry.configure(background="lightblue")  # Fondo del campo de entrada
+cal._top_cal.configure(background="lightblue")  # Fondo del calendario
 
-# Vincular evento de redimensionamiento
-root.bind("<Configure>", ajustar_escala)
-
-# Iniciar el bucle principal
 root.mainloop()

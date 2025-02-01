@@ -281,8 +281,10 @@ class main():
         self.P_menubutton.config(state='normal')
 
     def delete_widgets(self):
+        
         for widget in self.app.winfo_children():
             widget.destroy()
+        
 
     def check(self, event=None):
         username = self.User.get()  

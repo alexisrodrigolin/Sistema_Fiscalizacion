@@ -1,0 +1,11 @@
+{
+    "Db": "localhost",
+    "User": "root",
+    "Password": "Taytay-0307",
+    "Font": "0.8",
+    "Com": "3",
+    "Baudrate": "9600",
+    "AdminPass": "888888",
+    "EntryPass": "1",
+    "SuperPass": "0000"
+}

@@ -1,30 +1,39 @@
 import mysql.connector as sql
 import win32com.client as winc
+import json
 class Logic:
     def __init__(self):
-        self.paramets()
+        with open("Configuration.json", "r") as archivo:
+            self.datos = json.load(archivo)
+        self.font= float(self.datos['Font'])
+
+    def writeCfg(self):
+        with open("Configuration.json","w") as archivo:
+            json.dump(self.datos,archivo, indent=4)
+    def Conection(self):
+
         self.mydb = sql.connect( 
-        host="127.0.0.1",
-        user="root",
-        password=f"{self.Db_Password}",
+        host=f"{self.datos['Db']}",
+        user=f"{self.datos['User']}",
+        password=f"{self.datos['Password']}",
         database= "TEST"
         )
+
         if not self.mydb.is_connected(): exit()
         self.cursor= self.mydb.cursor()   
         self.subtotal= 0.00
         self.cant=0
         self.tique=[]
-
-    def paramets(self):
-        self.Db_Password= 'Taytay8888'
+        self.comnum= int(self.datos["Com"])
+        self.baudrate= int(self.datos["Baudrate"])
         self.valid_users = {
             "Tec":"2505",
             "admin": '888888',
             "1": "1",  
         }
-        self.comnum= 3
-        self.baudrate= 9600
 
+        
+        
     def suma(self,Descripcion='',Plu='',Precio= 0,Cantidad=0 , refresh= 0):
         if refresh ==1:
             self.subtotal=0.00
@@ -347,3 +356,4 @@ class Logic:
             return  drv.IFOpErrorDescGet()
         finally:
             drv.SerialPortClose()
+Logic()

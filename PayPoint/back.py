@@ -1,5 +1,5 @@
 import mysql.connector as sql
-import win32com.client as winc
+# import win32com.client as winc
 import json
 class Logic:
     def __init__(self):

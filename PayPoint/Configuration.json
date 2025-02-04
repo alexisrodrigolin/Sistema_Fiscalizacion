@@ -1,7 +1,7 @@
 {
     "Db": "localhost",
     "User": "root",
-    "Password": "Taytay-0307",
+    "Password": "",
     "Font": "0.8",
     "Com": "3",
     "Baudrate": "9600",

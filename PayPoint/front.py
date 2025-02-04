@@ -163,7 +163,7 @@ class caja():
             
 
         tb.Label(cfg, text="COM:", background='#F1EAD7',font=("arial", int(30 * self.Bend.font))).pack()
-        com=tb.Entry(cfg,style="Custom.TButt    on",font=("arial", int(15 * self.Bend.font)),justify="center") 
+        com=tb.Entry(cfg,style="Custom.TButton",font=("arial", int(15 * self.Bend.font)),justify="center") 
         com.pack()
         tb.Label(cfg, text="Baudrate:", background='#F1EAD7',font=("arial", int(30 * self.Bend.font))).pack()
         baudrate=tb.Entry(cfg,style="Custom.TButton",font=("arial", int(15 * self.Bend.font)),justify="center") 
@@ -284,7 +284,29 @@ class caja():
             self.Bend.suma(Descripcion=f"{net}", Precio=result[5], Plu=f"{codigo}", Cantidad=mult)
             self.total.config(text=f'$ {self.Bend.subtotal:.2f}')
             self.cantidad.config(text=f'{self.Bend.cant}')
-
+    def precio(self,event=0):
+        color= '#F1EAD7'
+        Precio=tk.Frame(self.app)
+        Precio.config(background=color)
+        plu=tb.Entry(Precio, style="Custom.TButton", width=15, font= ("Arial",  int(15 * self.Bend.font)))
+        content = self.entrada.get()
+        position = content.find('*')  # Encuentra la posición del asterisco
+        if position!= -1:
+            codigo = content[(position + 1):]
+            check = content[:position]
+            if check.isdigit():
+                mult = int(check)
+            else:
+                codigo = content
+        else:
+            codigo = content
+            mult = 1
+        self.entrada.delete(0, tb.END)
+        result = self.Bend.item(codigo) if codigo.isdigit() else 0
+        if not result:
+            self.mostrar_error("Articulo NO Registrado",1)
+        else:
+        # tb.Frame(Precio, text=)
 
     def almacen(self, event, type):
         content = self.entrada.get()[:-1] if type == 'Almacén' else self.entrada.get()
@@ -602,7 +624,6 @@ class caja():
                 Fdd= S_fecha.get()[8:10]
                 S= Syyyy+Smm+Sdd if len(S_fecha.get()) == 10 and len(F_fecha.get()) == 10 else 0
                 F=Fyyyy+Fmm+Fdd
-                
             if state==1 and var1.get():self.call("AuditoriaF",S,F)  
             elif state==1 and var2.get():self.call("AuditoriaDF",S,F)   
             elif state==2 and var1.get():self.call("Auditoria2", S_numZ.get(), F_numZ.get())                      

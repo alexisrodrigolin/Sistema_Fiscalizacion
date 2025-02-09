@@ -258,7 +258,7 @@ class caja():
             self.sales.grid(column=3, row=11)
             self.pay.grid(column=3, row=10)
 
-    def items(self, event=0):
+    def items(self, event=0, status=0):
         content = self.entrada.get()
         position = content.find('*')  # Encuentra la posición del asterisco
         if position!= -1:
@@ -273,42 +273,48 @@ class caja():
             mult = 1
         self.entrada.delete(0, tb.END)
         result = self.Bend.item(codigo) if codigo.isdigit() else 0
-        if not result:
+        if result==0 and status==0:
             self.mostrar_error("Articulo NO Registrado",1)
+        elif result==0 and status==1:
+            self.mostrar_error("Articulo NO Registrado",5)
         else:
             net = ''
             value = result[5] * mult
             for x in range(3):
                 if result[x]: net += f"{result[x]} "
-            self.detalles.insert('', 'end', values=(f"{mult}", f"{net}", f"$ {value:.2f} "))
-            self.Bend.suma(Descripcion=f"{net}", Precio=result[5], Plu=f"{codigo}", Cantidad=mult)
-            self.total.config(text=f'$ {self.Bend.subtotal:.2f}')
-            self.cantidad.config(text=f'{self.Bend.cant}')
-    def precio(self,event=0):
-        color= '#F1EAD7'
-        Precio=tk.Frame(self.app)
-        Precio.config(background=color)
-        plu=tb.Entry(Precio, style="Custom.TButton", width=15, font= ("Arial",  int(15 * self.Bend.font)))
-        content = self.entrada.get()
-        position = content.find('*')  # Encuentra la posición del asterisco
-        if position!= -1:
-            codigo = content[(position + 1):]
-            check = content[:position]
-            if check.isdigit():
-                mult = int(check)
-            else:
-                codigo = content
-        else:
-            codigo = content
-            mult = 1
-        self.entrada.delete(0, tb.END)
-        result = self.Bend.item(codigo) if codigo.isdigit() else 0
-        if not result:
-            self.mostrar_error("Articulo NO Registrado",1)
-        else:
-        # tb.Frame(Precio, text=)
+            if status==0:
+                self.detalles.insert('', 'end', values=(f"{mult}", f"{net}", f"$ {value:.2f} "))
+                self.Bend.suma(Descripcion=f"{net}", Precio=result[5], Plu=f"{codigo}", Cantidad=mult)
+                self.total.config(text=f'$ {self.Bend.subtotal:.2f}')
+                self.cantidad.config(text=f'{self.Bend.cant}')
+            elif status==1:
+                
+                self.Pitem.config(text= f"{net} x{mult}")    
+                self.Pprice.config(text= f"$ {value:.2f}")
 
-    def almacen(self, event, type):
+                
+    def precio(self,event):
+        color= 'grey'
+        self.Precio=tk.Frame(self.app)
+        self.Precio.config(background=color)
+        self.Precio.place(relheight=0.5,relwidth=0.5, rely=0.2, relx=0.25)
+        tb.Label(self.Precio, text= 'Consulte el Precio:', background='grey',font=("arial", int(30 * self.Bend.font))).pack(pady=10)
+        self.preciobind()
+        self.Pitem=tb.Label(self.Precio, text= "",foreground='white', background='grey',font=("arial", int(30 * self.Bend.font)) )
+        self.Pprice=tb.Label(self.Precio,text= "",foreground='white', background='grey',font=("arial", int(30 * self.Bend.font)))
+        self.Pitem.pack(pady=20)
+        self.Pprice.pack(pady=20)
+    def preciobind(self):
+        self.app.bind("<Escape>", lambda event: (self.Precio.destroy(), self.ppbind()))
+        self.app.bind("<Return>", lambda event: self.items(event,1))
+        self.app.bind("<+>", lambda event: self.almacen(event=event, type="Almacén",status=1))
+        self.app.bind("<F5>", lambda event: self.almacen(event=event, type="Fiambrería",status=1))
+        self.app.bind("<F6>", lambda event: self.almacen(event=event, type="Verdulería",status=1))
+        self.app.bind("<F7>", lambda event: self.almacen(event=event, type="Carnicería",status=1))
+        self.app.bind("<F8>", lambda event: self.almacen(event=event, type="Frío/Bolsa",status=1))
+        self.app.bind("<F9>", lambda event: self.almacen(event=event, type="Envase",status=1))
+        self.app.bind("<F10>", lambda event: self.almacen(event=event, type="Bazar",status=1))
+    def almacen(self,type,event=0,status=0, ):
         content = self.entrada.get()[:-1] if type == 'Almacén' else self.entrada.get()
         if not content:
             return
@@ -326,14 +332,20 @@ class caja():
             codigo = float(content[(position + 1):]) if content[(position + 1):].replace(".", "", 1).isdigit() and \
                                                       content[(position + 1):].count else 0
             mult = 1
-        if codigo == 0:
+        if codigo == 0 and status==0:
             self.mostrar_error(f"Verifique el valor: {content}",1)
+        elif codigo == 0 and status==1:
+            self.mostrar_error(f"Verifique el valor: {content}",5)
         else:
             value = mult * codigo
-            self.detalles.insert('', 'end', values=(f"{mult}", f"{type}", f"$ {value:.2f} "))
-            self.Bend.suma(Descripcion=f"{type}", Cantidad=mult,  Precio=codigo, Plu='11111111')
-            self.total.config(text=f'$ {self.Bend.subtotal:.2f}')
-            self.cantidad.config(text=f'{self.Bend.cant}')
+            if status==0:
+                self.detalles.insert('', 'end', values=(f"{mult}", f"{type}", f"$ {value:.2f} "))
+                self.Bend.suma(Descripcion=f"{type}", Cantidad=mult,  Precio=codigo, Plu='11111111')
+                self.total.config(text=f'$ {self.Bend.subtotal:.2f}')
+                self.cantidad.config(text=f'{self.Bend.cant}')
+            elif status==1:
+                self.Pitem.config(text= f"{type} x{mult}")    
+                self.Pprice.config(text= f"$ {value:.2f}")
 
     def delete_widgets(self):
         self.ppunbind()
@@ -352,17 +364,18 @@ class caja():
 
     def ppbind(self, event=0):
         self.app.bind("<Escape>", self.menu)
-        self.app.bind("<Return>", self.items)
-        self.app.bind("<+>", lambda event: self.almacen(event, "Almacén"))
+        self.app.bind("<Return>", lambda event: self.items(event, 0))
+        self.app.bind("<+>", lambda event: self.almacen(event=event, type= "Almacén"))
+        self.app.bind("<F1>", lambda event: self.precio(event))
         self.app.bind("<F2>", lambda event: self.cancelar_anular(event=event, status=0))
         self.app.bind("<F3>", lambda event: self.cancelar_anular(event=event, status=1))
         self.app.bind("<F4>", self.Resume)
-        self.app.bind("<F5>", lambda event: self.almacen(event, "Fiambrería"))
-        self.app.bind("<F6>", lambda event: self.almacen(event, "Verdulería"))
-        self.app.bind("<F7>", lambda event: self.almacen(event, "Carnicería"))
-        self.app.bind("<F8>", lambda event: self.almacen(event, "Frío/Bolsa"))
-        self.app.bind("<F9>", lambda event: self.almacen(event, "Envase"))
-        self.app.bind("<F10>", lambda event: self.almacen(event, "Bazar"))
+        self.app.bind("<F5>", lambda event: self.almacen(event=event, type=  "Fiambrería"))
+        self.app.bind("<F6>", lambda event: self.almacen(event=event, type= "Verdulería"))
+        self.app.bind("<F7>", lambda event: self.almacen(event=event, type=  "Carnicería"))
+        self.app.bind("<F8>", lambda event: self.almacen(event=event, type= "Frío/Bolsa"))
+        self.app.bind("<F9>", lambda event: self.almacen(event=event, type= "Envase"))
+        self.app.bind("<F10>", lambda event: self.almacen(event=event, type=  "Bazar"))
         self.entrada.focus()
 
 
@@ -394,16 +407,22 @@ class caja():
         self.resume.config(background='#F1EAD7')
         self.resume.place(relx=0, rely=0, relwidth=1, relheight=1)
         self.resume.grab_set()
-        R_bonificacion_valor = tb.Entry(self.resume, style='Custom.TButton',
-                                        font=("arial", int(25 * self.Bend.font)), justify='center')
+        self.R_bonificacion_valor = tb.Entry(self.resume, style='Custom.TButton',
+                                        font=("arial", int(25 * self.Bend.font)), justify='center',width=3)
+        self.R_recargo_valor = tb.Entry(self.resume, style='Custom.TButton',
+                                        font=("arial", int(25 * self.Bend.font)), justify='center',width=3)
         R_total = tb.Label(self.resume, text='Total:', background='#F1EAD7', foreground='#847C67',
                            font=("arial", int(70 * self.Bend.font)))
-        R_total_valor = tb.Label(self.resume, text=f'$ {self.Bend.subtotal:.2f}',
+        self.R_total_valor = tb.Label(self.resume, text=f'$ {self.Bend.subtotal:.2f}',
                                  font=('arial', int(70 * self.Bend.font)), background='#F1EAD7',
                                  foreground='#847C67')
         R_bonificacion = tb.Label(self.resume, text='Bonificación %',
                                   font=('arial', int(30 * self.Bend.font)), background='#F1EAD7',
                                   foreground='#847C67')
+        R_recargo = tb.Label(self.resume, text='Recargo %',
+                                  font=('arial', int(30 * self.Bend.font)), background='#F1EAD7',
+                                  foreground='#847C67')
+
         R_efectivo = tb.Label(self.resume, text='+ Efectivo:',
                               font=('arial', int(30 * self.Bend.font)), background='#F1EAD7',
                               foreground='#847C67')
@@ -435,12 +454,14 @@ class caja():
         self.R_tarjeta_valor.place(relx= 0.3244, rely= 0.5182, relwidth=0.17)
         self.R_facturacion.place(relx= 0.35, rely=0.75, relwidth=0.1)
         R_efectivo.place(relx=0.0508, rely=0.3945)
-        R_bonificacion_valor.place(relx= 0.72, rely= 0.1966, relwidth=0.06 )
+        self.R_bonificacion_valor.place(relx= 0.72, rely= 0.1966,  )
+        self.R_recargo_valor.place(relx= 0.72, rely= 0.25,  )
         R_PagoElec.place(relx=0.0508, rely=0.4557)
         R_Tarjeta.place(relx=0.0508, rely=0.5182)
         R_bonificacion.place(relx=0.54, rely=0.1966)
+        R_recargo.place(relx=0.54, rely=0.25)
         R_total.place(relx=0.032, rely=0.0677)
-        R_total_valor.place(relx=0.65, rely=0.0677)
+        self.R_total_valor.place(relx=0.65, rely=0.0677)
         R_monto.place(relx= 0.0508, rely= 0.6)
         self.R_monto_valor.place(relx= 0.3244, rely= 0.6)
         R_vuelto.place(relx= 0.0508, rely= 0.66)
@@ -448,6 +469,7 @@ class caja():
         self.R_efectivo_valor.focus()       
         self.R_suma=0
         self.resumeBind()
+
     def sim(self,status, event=0):  
             if status ==1:
                 widget= self.R_efectivo_valor
@@ -483,16 +505,30 @@ class caja():
             self.R_monto_valor.config(text= f"$ {self.R_suma:.2f}")
 
     def resumeBind(self):
-
+        def bon(event=0):
+            rec= int(self.R_recargo_valor.get()) if self.R_recargo_valor.get().isdigit() else 0
+            if rec<=0: self.R_recargo_valor.delete(0, tk.END)
+            boni= int(self.R_bonificacion_valor.get()) if self.R_bonificacion_valor.get().isdigit() else 0
+            if boni<=0 or boni>=100: 
+                self.R_bonificacion_valor.delete(0, tk.END)
+                boni=0
+            porcentaje= 100+rec-boni
+            value=(porcentaje*self.Bend.subtotal)/100
+            self.R_total_valor.config(text= f"$ {value:.2f}")
+            if not value== self.Bend.subtotal:
+                tb.Label(self.resume, text=f'Subtotal:  $ {self.Bend.subtotal:.2f}',
+                                  font=('arial', int(30 * self.Bend.font)), background='#F1EAD7',
+                                  foreground='#847C67').place(relx=0.54, rely=0.35)
         self.R_efectivo_valor.bind("<Return>", lambda event : self.enter_as_tab(event))
         self.R_PagoElec_valor.bind("<Return>", lambda event : self.enter_as_tab(event))
         self.R_tarjeta_valor.bind("<Return>", lambda event: (self.resume.focus_force(), self.call("tique",event=event)))
         self.R_efectivo_valor.bind("<FocusOut>", lambda event: self.sim(1, event))
         self.R_PagoElec_valor.bind("<FocusOut>", lambda event: self.sim(2, event))
         self.R_tarjeta_valor.bind("<FocusOut>", lambda event: self.sim(3, event))
+        self.R_recargo_valor.bind("<FocusOut>", lambda event: bon(event))
+        self.R_bonificacion_valor.bind("<FocusOut>", lambda event: bon(event))
         self.app.bind("<F4>", lambda event: self.call("tique", event))
         self.app.bind("<Escape>", lambda event: (self.resume.destroy(), self.ppbind()))
-        self.app.bind("<F6>", lambda event: self.cancelar_anular(status=1, event=event))
     def call(self, command,extra=0, extra1=0, event=0):
         result= self.Bend.main(f"{command}", extra, extra1) if extra1 else self.Bend.main(f"{command}")
         if command== "tique":
@@ -543,6 +579,9 @@ class caja():
         elif state==1:
             self.app.bind("<Escape>", lambda event: (error_window.destroy(), self.ppbind()))
             close_button = tb.Button(error_window, text="Cerrar", style= "secondary",command=lambda: (error_window.destroy(), self.ppbind()))
+        elif state==5:
+            self.app.bind("<Escape>", lambda event: (error_window.destroy(), self.preciobind()))
+            close_button = tb.Button(error_window, text="Cerrar", style= "secondary",command=lambda: (error_window.destroy(), self.preciobind()))
         elif state==2:
             self.app.bind("<Escape>", lambda event: (error_window.destroy(), self.resumeBind()))
             close_button = tb.Button(error_window, text="Cerrar", style= "secondary",command= lambda: (error_window.destroy(), self.resumeBind()))

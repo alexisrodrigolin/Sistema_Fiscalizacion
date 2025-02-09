@@ -25,143 +25,145 @@ class main():
         self.User.grid(column=7, row=5)
 
         
-    def create_widget_precio(self):
-        self.P_control_value= tb.StringVar(value="1")
-        self.delete_widgets()
-        self.P_id= tb.Label(self.app, text= "Codigo:", font= ("Arial",  int(15 * self.Back.font)), )
-        self.P_id_value= tb.Entry(self.app, style= "darkly",width=15)
-        self.P_plu= tb.Label(self.app, text= "PLU:", font= ("Arial",  int(15 * self.Back.font)))
-        self.P_plu_value= tb.Entry(self.app, style= "darkly",width=15)
-        self.P_plu2= tb.Label(self.app, text= "PLU 2:", font= ("Arial",  int(15 * self.Back.font)))
-        self.P_plu2_value= tb.Entry(self.app, style= "darkly",width=15)
-        self.P_precio= tb.Label(self.app, text= "Precio:", font= ("Arial",  int(15 * self.Back.font)))
-        self.P_precio_value= tb.Entry(self.app, style= "darkly", width=15, font= ("Arial",15))
-        self.P_marca= tb.Label(self.app, text= "Marca:", font= ("Arial",  int(15 * self.Back.font)))
-        self.P_marca_value= tb.Entry(self.app, style= "darkly", width=15, font= ("Arial",  int(15 * self.Back.font)))
-        self.P_descripcion= tb.Label(self.app, text= "Descripcion:", font= ("Arial",  int(15 * self.Back.font)))
-        self.P_descripcion_value= tb.Entry(self.app, style= "darkly", font= ("Arial",  int(15 * self.Back.font)), width=21)
-        self.P_tipo= tb.Label(self.app, text= "Tipo/Sabor:", font= ("Arial",  int(15 * self.Back.font)))
-        self.P_tipo_value= tb.Entry(self.app, style= "darkly", font= ("Arial",  int(15 * self.Back.font)), width=20)
-        self.P_cantidad= tb.Label(self.app, text= "Cantidad:", font= ("Arial",  int(15 * self.Back.font)))
-        self.P_cantidad_value= tb.Entry(self.app, style= "darkly", font= ("Arial",  int(15 * self.Back.font)), width=7)
+    def create_widget_precio(self,bind=0):
+        if bind==0:
+            self.P_control_value= tb.StringVar(value="1")
+            self.delete_widgets()
+            self.P_id= tb.Label(self.app, text= "Codigo:", font= ("Arial",  int(15 * self.Back.font)), )
+            self.P_id_value= tb.Entry(self.app, style= "darkly",width=15)
+            self.P_plu= tb.Label(self.app, text= "PLU:", font= ("Arial",  int(15 * self.Back.font)))
+            self.P_plu_value= tb.Entry(self.app, style= "darkly",width=15)
+            self.P_plu2= tb.Label(self.app, text= "PLU 2:", font= ("Arial",  int(15 * self.Back.font)))
+            self.P_plu2_value= tb.Entry(self.app, style= "darkly",width=15)
+            self.P_precio= tb.Label(self.app, text= "Precio:", font= ("Arial",  int(15 * self.Back.font)))
+            self.P_precio_value= tb.Entry(self.app, style= "darkly", width=15, font= ("Arial",15))
+            self.P_marca= tb.Label(self.app, text= "Marca:", font= ("Arial",  int(15 * self.Back.font)))
+            self.P_marca_value= tb.Entry(self.app, style= "darkly", width=15, font= ("Arial",  int(15 * self.Back.font)))
+            self.P_descripcion= tb.Label(self.app, text= "Descripcion:", font= ("Arial",  int(15 * self.Back.font)))
+            self.P_descripcion_value= tb.Entry(self.app, style= "darkly", font= ("Arial",  int(15 * self.Back.font)), width=21)
+            self.P_tipo= tb.Label(self.app, text= "Tipo/Sabor:", font= ("Arial",  int(15 * self.Back.font)))
+            self.P_tipo_value= tb.Entry(self.app, style= "darkly", font= ("Arial",  int(15 * self.Back.font)), width=20)
+            self.P_cantidad= tb.Label(self.app, text= "Cantidad:", font= ("Arial",  int(15 * self.Back.font)))
+            self.P_cantidad_value= tb.Entry(self.app, style= "darkly", font= ("Arial",  int(15 * self.Back.font)), width=7)
 
 
-        self.P_menubutton = tb.Menubutton(self.app, text="ml", width=5,style= "darkly", padding=(5,9))
-        self.P_menu_op = tb.Menu(self.P_menubutton)
-        opciones=["Unidad", "ml","Gramos", "Litros",  "KilosGramos", "Metros", "m³"]
-        for i, opcion in enumerate(opciones, start=1):
-            self.P_menu_op.add_radiobutton(label=opcion, variable=self.P_control_value, value=str(i))
+            self.P_menubutton = tb.Menubutton(self.app, text="ml", width=5,style= "darkly", padding=(5,9))
+            self.P_menu_op = tb.Menu(self.P_menubutton)
+            opciones=["Unidad", "ml","Gramos", "Litros",  "KilosGramos", "Metros", "m³"]
+            for i, opcion in enumerate(opciones, start=1):
+                self.P_menu_op.add_radiobutton(label=opcion, variable=self.P_control_value, value=str(i))
 
-        self.P_menubutton.config(menu=self.P_menu_op)
-
-
-        barras=tb.Label(self.app, text="////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////")
-        barras1=tb.Label(self.app, text="////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////")
-        barras2=tb.Label(self.app, text="////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////")
-
-        self.P_departamento= tb.Label(self.app, text= "Deepartamento:", font= ("Arial",  int(15 * self.Back.font)))
-        self.P_departamento_value= tb.Entry(self.app, style= "darkly", width=14, font= ("Arial",  int(15 * self.Back.font)))
-        self.P_pasillo= tb.Label(self.app, text= "Pasillo:", font= ("Arial",  int(15 * self.Back.font)))
-        self.P_pasillo_value= tb.Entry(self.app, style= "darkly", font= ("Arial",  int(15 * self.Back.font)), width=14)
-        self.P_costo= tb.Label(self.app, text= "Costo s.IVA:", font= ("Arial",  int(15 * self.Back.font)))
-        self.P_costo_value= tb.Entry(self.app, style= "darkly", font= ("Arial",  int(15 * self.Back.font)), width=7)
-        self.P_iva= tb.Label(self.app, text= "IVA:", font= ("Arial",  int(15 * self.Back.font)))
-        self.P_iva_value= tb.Entry(self.app, style= "darkly", font= ("Arial",  int(15 * self.Back.font)), width=7)
-        self.P_ganancia= tb.Label(self.app, text= "Ganancia %:", font= ("Arial",  int(15 * self.Back.font)))
-        self.P_ganancia_value= tb.Entry(self.app, style= "darkly", font= ("Arial",  int(15 * self.Back.font)), width=7)
-        self.P_preReco= tb.Label(self.app, text= f"Precio recomendado \n para venta: $", font= ("Arial",  int(15 * self.Back.font)), foreground="#B6B6B6")
-
-        self.P_preCan= tb.Label(self.app, text= f"<<<Precio por Cantidad>>>", font= ("Arial",  int(15 * self.Back.font)))
-        self.P_cantidad1= tb.Label(self.app, text= "Cantidad 1:", font= ("Arial",  int(15 * self.Back.font)))
-        self.P_cantidad1_value= tb.Entry(self.app, style= "darkly", width=7, font= ("Arial",  int(15 * self.Back.font)))
-        self.P_cantidad2= tb.Label(self.app, text= "Canridad 2:", font= ("Arial",  int(15 * self.Back.font)))
-        self.P_cantidad2_value= tb.Entry(self.app, style= "darkly", font= ("Arial",  int(15 * self.Back.font)), width=7)
-        self.P_cantidad3= tb.Label(self.app, text= "Cantidad 3:", font= ("Arial",  int(15 * self.Back.font)))
-        self.P_cantidad3_value= tb.Entry(self.app, style= "darkly", font= ("Arial",  int(15 * self.Back.font)), width=7)
-        self.P_precioC1= tb.Label(self.app, text= "Precio x Uni:", font= ("Arial",  int(15 * self.Back.font)))
-        self.P_precioC1_value= tb.Entry(self.app, style= "darkly", font= ("Arial",  int(15 * self.Back.font)), width=7)
-        self.P_precioC2= tb.Label(self.app, text= "Precio x Uni:", font= ("Arial",  int(15 * self.Back.font)))
-        self.P_precioC2_value= tb.Entry(self.app, style= "darkly", font= ("Arial",  int(15 * self.Back.font)), width=7)
-        self.P_precioC3= tb.Label(self.app, text= "Precio x Uni:", font= ("Arial",  int(15 * self.Back.font)))
-        self.P_precioC3_value= tb.Entry(self.app, style= "darkly", font= ("Arial",int(15 * self.Back.font)), width=7)
-        self.P_guardar= tb.Button(self.app, text="Guardar y emitir", bootstyle="warning-outline")
-        self.P_guardarSin= tb.Button(self.app, text="Guadar sin emitir", bootstyle="warning-outline",command=self.save)
-        self.P_borrar= tb.Button(self.app, text="Borrar", bootstyle="warning-outline")
-        self.P_menu= tb.Button(self.app, text="Menu", bootstyle="warning-outline", command= self.menu)
-        self.P_borrarOf= tb.Button(self.app, text="Borrar Oferta", bootstyle="warning-link", command=self.borrarOf)
-        self.P_buscar= tb.Button(self.app, text="Buscar", bootstyle="warning-outline")
-        self.P_fecha= tb.Label(self.app, text="Fecha de Modificacion:", font= ("Arial", int(20 * self.Back.font)), foreground="#7B7A7A" )
-
-#row 1
-        self.P_id.place(relx=0.05, rely=0.07)
-        self.P_id_value.place(relx=0.14, rely=0.07, relheight=0.0339, relwidth=0.17)
-
-        self.P_plu.place(relx=0.05, rely=0.12)
-        self.P_plu_value.place(relx=0.14, rely=0.12, relheight=0.0339, relwidth=0.17)
-
-        self.P_plu2.place(relx=0.47, rely=0.07)
-        self.P_plu2_value.place(relx=0.55, rely=0.07, relheight=0.0339, relwidth=0.17)
-
-        self.P_precio.place(relx=0.47, rely=0.12)
-        self.P_precio_value.place(relx=0.55, rely=0.12,  relwidth=0.17)
+            self.P_menubutton.config(menu=self.P_menu_op)
 
 
-        self.P_marca.place(relx=0.0156, rely=0.23)
-        self.P_marca_value.place(relx=0.0156, rely=0.27, relheight=0.04, relwidth=0.21) 
-        self.P_descripcion.place(relx=0.24,rely= 0.23)
-        self.P_descripcion_value.place(relx= 0.24, rely=0.27, relheight=0.04, relwidth=0.27)      
-        self.P_tipo.place(relx=0.52, rely=0.23)
-        self.P_tipo_value.place(relx=0.52, rely=0.27, relheight=0.04, relwidth=0.26) 
-        self.P_cantidad.place(relx=0.7871,rely= 0.23)
-        self.P_cantidad_value.place(relx= 0.7871, rely=0.27, relheight=0.04, relwidth=0.1)  
-        self.P_menubutton.place(relx=0.9102 ,rely=0.27,relheight=0.045, relwidth=0.072 )
-        barras.place(relx=0, rely=0.3411)
-        self.P_departamento.place(relx= 0.0156, rely=0.3906)
-        self.P_departamento_value.place(relx= 0.163, rely=0.3906, relheight=0.04, relwidth=0.14)
-        self.P_pasillo.place(relx=0.0156, rely=0.45)
-        self.P_pasillo_value.place(relx=0.163, rely= 0.45, relheight=0.04, relwidth=0.14)
-        self.P_costo.place(relx= 0.36, rely=0.3906)
-        self.P_costo_value.place(relx= 0.4785, rely=0.3906, relheight=0.04, relwidth=0.1)
-        self.P_iva.place(relx= 0.36, rely=0.45)
-        self.P_iva_value.place(relx= 0.4785, rely=0.45, relheight=0.04, relwidth=0.1)
-        self.P_ganancia.place(relx=0.6025, rely=0.3906)
-        self.P_ganancia_value.place(relx=0.739 , rely=0.3906, relheight=0.04, relwidth=0.14)
-        self.P_preReco.place(relx=0.6816, rely=0.4557)
-        barras1.place(relx=0, rely=0.5287)
-        self.P_preCan.place(relx= 0.0273, rely= 0.5664)
-        self.P_cantidad1.place(relx=0.0156, rely=0.63)
-        self.P_cantidad1_value.place(relx=0.135, rely=0.63, relheight=0.04, relwidth=0.14)
-        self.P_cantidad2.place(relx=0.3369, rely=0.63)
-        self.P_cantidad2_value.place(relx=0.455, rely=0.63, relheight=0.04, relwidth=0.14)
-        self.P_cantidad3.place(relx=0.6719, rely=0.63)
-        self.P_cantidad3_value.place(relx=0.79, rely=0.63, relheight=0.04, relwidth=0.14)
-        self.P_precioC1.place(relx=0.0156, rely=0.6914)
-        self.P_precioC1_value.place(relx=0.135, rely=0.6914, relheight=0.04, relwidth=0.14)
-        self.P_precioC2.place(relx=0.3369, rely=0.6914)
-        self.P_precioC2_value.place(relx=0.455, rely=0.6914, relheight=0.04, relwidth=0.14)
-        self.P_precioC3.place(relx=0.6719, rely=0.6914)
-        self.P_precioC3_value.place(relx=0.79, rely=0.6914, relheight=0.04, relwidth=0.14)
-        barras2.place(relx=0, rely=0.7917)
-    
-        self.P_guardar.place(relx= 0.0283, rely=0.872)
-        self.P_guardarSin.place(relx=0.2246,rely=0.872)
-        self.P_borrar.place(relx=0.3984,rely=0.872)
-        self.P_menu.place(relx=0.50,rely=0.872)
-        self.P_borrarOf.place(relx=0.837,rely=0.5664)
-        self.P_buscar.place(relx=0.874,rely=0.0911)
-        self.P_fecha.place(relx=0.6426,rely=0.872)
+            barras=tb.Label(self.app, text="////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////")
+            barras1=tb.Label(self.app, text="////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////")
+            barras2=tb.Label(self.app, text="////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////")
+
+            self.P_departamento= tb.Label(self.app, text= "Deepartamento:", font= ("Arial",  int(15 * self.Back.font)))
+            self.P_departamento_value= tb.Entry(self.app, style= "darkly", width=14, font= ("Arial",  int(15 * self.Back.font)))
+            self.P_pasillo= tb.Label(self.app, text= "Pasillo:", font= ("Arial",  int(15 * self.Back.font)))
+            self.P_pasillo_value= tb.Entry(self.app, style= "darkly", font= ("Arial",  int(15 * self.Back.font)), width=14)
+            self.P_costo= tb.Label(self.app, text= "Costo s.IVA:", font= ("Arial",  int(15 * self.Back.font)))
+            self.P_costo_value= tb.Entry(self.app, style= "darkly", font= ("Arial",  int(15 * self.Back.font)), width=7)
+            self.P_iva= tb.Label(self.app, text= "IVA:", font= ("Arial",  int(15 * self.Back.font)))
+            self.P_iva_value= tb.Entry(self.app, style= "darkly", font= ("Arial",  int(15 * self.Back.font)), width=7)
+            self.P_ganancia= tb.Label(self.app, text= "Ganancia %:", font= ("Arial",  int(15 * self.Back.font)))
+            self.P_ganancia_value= tb.Entry(self.app, style= "darkly", font= ("Arial",  int(15 * self.Back.font)), width=7)
+            self.P_preReco= tb.Label(self.app, text= f"Precio recomendado \n para venta: $", font= ("Arial",  int(15 * self.Back.font)), foreground="#B6B6B6")
+
+            self.P_preCan= tb.Label(self.app, text= f"<<<Precio por Cantidad>>>", font= ("Arial",  int(15 * self.Back.font)))
+            self.P_cantidad1= tb.Label(self.app, text= "Cantidad 1:", font= ("Arial",  int(15 * self.Back.font)))
+            self.P_cantidad1_value= tb.Entry(self.app, style= "darkly", width=7, font= ("Arial",  int(15 * self.Back.font)))
+            self.P_cantidad2= tb.Label(self.app, text= "Canridad 2:", font= ("Arial",  int(15 * self.Back.font)))
+            self.P_cantidad2_value= tb.Entry(self.app, style= "darkly", font= ("Arial",  int(15 * self.Back.font)), width=7)
+            self.P_cantidad3= tb.Label(self.app, text= "Cantidad 3:", font= ("Arial",  int(15 * self.Back.font)))
+            self.P_cantidad3_value= tb.Entry(self.app, style= "darkly", font= ("Arial",  int(15 * self.Back.font)), width=7)
+            self.P_precioC1= tb.Label(self.app, text= "Precio x Uni:", font= ("Arial",  int(15 * self.Back.font)))
+            self.P_precioC1_value= tb.Entry(self.app, style= "darkly", font= ("Arial",  int(15 * self.Back.font)), width=7)
+            self.P_precioC2= tb.Label(self.app, text= "Precio x Uni:", font= ("Arial",  int(15 * self.Back.font)))
+            self.P_precioC2_value= tb.Entry(self.app, style= "darkly", font= ("Arial",  int(15 * self.Back.font)), width=7)
+            self.P_precioC3= tb.Label(self.app, text= "Precio x Uni:", font= ("Arial",  int(15 * self.Back.font)))
+            self.P_precioC3_value= tb.Entry(self.app, style= "darkly", font= ("Arial",int(15 * self.Back.font)), width=7)
+            self.P_guardar= tb.Button(self.app, text="Guardar y emitir", bootstyle="warning-outline")
+            self.P_guardarSin= tb.Button(self.app, text="Guadar sin emitir", bootstyle="warning-outline",command=self.save)
+            self.P_borrar= tb.Button(self.app, text="Borrar", bootstyle="warning-outline")
+            self.P_menu= tb.Button(self.app, text="Menu", bootstyle="warning-outline", command= self.menu)
+            self.P_borrarOf= tb.Button(self.app, text="Borrar Oferta", bootstyle="warning-link", command=self.borrarOf)
+            self.P_buscar= tb.Button(self.app, text="Buscar", bootstyle="warning-outline")
+            self.P_fecha= tb.Label(self.app, text="Fecha de Modificacion:", font= ("Arial", int(20 * self.Back.font)), foreground="#7B7A7A" )
+
+    #row 1
+            self.P_id.place(relx=0.05, rely=0.07)
+            self.P_id_value.place(relx=0.14, rely=0.07, relheight=0.0339, relwidth=0.17)
+
+            self.P_plu.place(relx=0.05, rely=0.12)
+            self.P_plu_value.place(relx=0.14, rely=0.12, relheight=0.0339, relwidth=0.17)
+
+            self.P_plu2.place(relx=0.47, rely=0.07)
+            self.P_plu2_value.place(relx=0.55, rely=0.07, relheight=0.0339, relwidth=0.17)
+
+            self.P_precio.place(relx=0.47, rely=0.12)
+            self.P_precio_value.place(relx=0.55, rely=0.12,  relwidth=0.17)
+
+
+            self.P_marca.place(relx=0.0156, rely=0.23)
+            self.P_marca_value.place(relx=0.0156, rely=0.27, relheight=0.04, relwidth=0.21) 
+            self.P_descripcion.place(relx=0.24,rely= 0.23)
+            self.P_descripcion_value.place(relx= 0.24, rely=0.27, relheight=0.04, relwidth=0.27)      
+            self.P_tipo.place(relx=0.52, rely=0.23)
+            self.P_tipo_value.place(relx=0.52, rely=0.27, relheight=0.04, relwidth=0.26) 
+            self.P_cantidad.place(relx=0.7871,rely= 0.23)
+            self.P_cantidad_value.place(relx= 0.7871, rely=0.27, relheight=0.04, relwidth=0.1)  
+            self.P_menubutton.place(relx=0.9102 ,rely=0.27,relheight=0.045, relwidth=0.072 )
+            barras.place(relx=0, rely=0.3411)
+            self.P_departamento.place(relx= 0.0156, rely=0.3906)
+            self.P_departamento_value.place(relx= 0.163, rely=0.3906, relheight=0.04, relwidth=0.14)
+            self.P_pasillo.place(relx=0.0156, rely=0.45)
+            self.P_pasillo_value.place(relx=0.163, rely= 0.45, relheight=0.04, relwidth=0.14)
+            self.P_costo.place(relx= 0.36, rely=0.3906)
+            self.P_costo_value.place(relx= 0.4785, rely=0.3906, relheight=0.04, relwidth=0.1)
+            self.P_iva.place(relx= 0.36, rely=0.45)
+            self.P_iva_value.place(relx= 0.4785, rely=0.45, relheight=0.04, relwidth=0.1)
+            self.P_ganancia.place(relx=0.6025, rely=0.3906)
+            self.P_ganancia_value.place(relx=0.739 , rely=0.3906, relheight=0.04, relwidth=0.14)
+            self.P_preReco.place(relx=0.6816, rely=0.4557)
+            barras1.place(relx=0, rely=0.5287)
+            self.P_preCan.place(relx= 0.0273, rely= 0.5664)
+            self.P_cantidad1.place(relx=0.0156, rely=0.63)
+            self.P_cantidad1_value.place(relx=0.135, rely=0.63, relheight=0.04, relwidth=0.14)
+            self.P_cantidad2.place(relx=0.3369, rely=0.63)
+            self.P_cantidad2_value.place(relx=0.455, rely=0.63, relheight=0.04, relwidth=0.14)
+            self.P_cantidad3.place(relx=0.6719, rely=0.63)
+            self.P_cantidad3_value.place(relx=0.79, rely=0.63, relheight=0.04, relwidth=0.14)
+            self.P_precioC1.place(relx=0.0156, rely=0.6914)
+            self.P_precioC1_value.place(relx=0.135, rely=0.6914, relheight=0.04, relwidth=0.14)
+            self.P_precioC2.place(relx=0.3369, rely=0.6914)
+            self.P_precioC2_value.place(relx=0.455, rely=0.6914, relheight=0.04, relwidth=0.14)
+            self.P_precioC3.place(relx=0.6719, rely=0.6914)
+            self.P_precioC3_value.place(relx=0.79, rely=0.6914, relheight=0.04, relwidth=0.14)
+            barras2.place(relx=0, rely=0.7917)
+        
+            self.P_guardar.place(relx= 0.0283, rely=0.872)
+            self.P_guardarSin.place(relx=0.2246,rely=0.872)
+            self.P_borrar.place(relx=0.3984,rely=0.872)
+            self.P_menu.place(relx=0.50,rely=0.872)
+            self.P_borrarOf.place(relx=0.837,rely=0.5664)
+            self.P_buscar.place(relx=0.874,rely=0.0911)
+            self.P_fecha.place(relx=0.6426,rely=0.872)
+
+            
+            self.orden= ['plu', 'plu2','precio','marca','descripcion', 'tipo', 'cantidad', 'control',
+                        'departamento', 'pasillo', 'costo','iva', 'ganancia', 
+                        "cantidad1",'precioC1', 'cantidad2', 'precioC2','cantidad3', 'precioC3']      
+            self.colsql= ['PLU','PLU2', 'Precio','Marca','Descripcion', 'Tipo_Sabor','Cantidad', 'Unidad',
+                        'Departamento', 'Pasillo', 'Costo','IVA', 'Ganancia', 
+                        "Cant1",'Precio1', 'Cant2', 'Precio2','Cant3', 'Precio3']  
         self.disable_entries(exclude=[self.P_id_value])
-
         self.P_precio_value.bind("<FocusOut>", self.agregar_sim)
         self.app.bind("<Escape>", self.menu)  
-        self.app.bind("<Return>", self.buscar)    
-        
-        self.orden= ['plu', 'plu2','precio','marca','descripcion', 'tipo', 'cantidad', 'control',
-                     'departamento', 'pasillo', 'costo','iva', 'ganancia', 
-                     "cantidad1",'precioC1', 'cantidad2', 'precioC2','cantidad3', 'precioC3']      
-        self.colsql= ['PLU','PLU2', 'Precio','Marca','Descripcion', 'Tipo_Sabor','Cantidad', 'Unidad',
-                     'Departamento', 'Pasillo', 'Costo','IVA', 'Ganancia', 
-                     "Cant1",'Precio1', 'Cant2', 'Precio2','Cant3', 'Precio3']  
+        self.app.bind("<Return>", self.buscar)  
+          
     def borrarOf(self):
         Of= ["cantidad1",'precioC1', 'cantidad2', 'precioC2','cantidad3', 'precioC3']
         for x in Of:

@@ -1,5 +1,5 @@
 import mysql.connector as sql
-# import win32com.client as winc
+import win32com.client as winc
 import json
 class Logic:
     def __init__(self):
@@ -74,7 +74,7 @@ class Logic:
         errdesc = drv.IFOpErrorDescGet()
         print("Error %d en comando %s: %s" % (err, cmdname, errdesc))
         exit()
-    def main(self,command,extra=0, extra1=0, event=0):
+    def main(self,command,status=0, extra=0, extra1=0, event=0):
 
         drv = winc.Dispatch("Sam4sFiscalDriver.Sam4sFiscalDriver")
         try:
@@ -258,6 +258,20 @@ class Logic:
                     if not drv.IFOpSend(1):
                         self.cmd_error("ItemVenta",drv)
                         exit()
+                if extra:
+                    drv.IFOpBegin("DescuentoGeneral")
+                    drv.IFOpParamSet("Descripcion", "Bonificación:")
+                    drv.IFOpParamFloatSet("Monto", extra)  
+                    if not drv.IFOpSend(1):
+                        self.cmd_error("DescuentoGeneral",drv)
+                        exit()           
+                if extra1:
+                    drv.IFOpBegin("RecargoGeneral")
+                    drv.IFOpParamSet("Descripcion", "Recargo:")
+                    drv.IFOpParamFloatSet("Monto", extra1)  
+                    if not drv.IFOpSend(1):
+                        self.cmd_error("RecargoGeneral",drv)
+                        exit()             
                 print("Cerrar")
                 drv.IFOpBegin("Cerrar")
                 if not drv.IFOpSend(1):

@@ -1,6 +1,6 @@
 import mysql.connector as sql
 import json
-
+from mysql.connector import Error
 class connection():
     def __init__(self):
         with open("PriceConfiguration.json", "r") as archivo:
@@ -55,3 +55,42 @@ class connection():
     def writeCfg(self):
         with open("PriceConfiguration.json","w") as archivo:
             json.dump(self.datos,archivo, indent=4)
+    def buscar_productos(self,general_terms, cantidad):
+        try:
+           
+            condiciones = []
+            parametros = []
+            
+            # Búsqueda general
+            terminos_limpios = [t.strip() for t in general_terms.split() if t.strip()]
+            for termino in terminos_limpios:
+                busqueda = f"%{termino}%"
+                condiciones.append("(marca LIKE %s OR descripcion LIKE %s OR tipo_sabor LIKE %s)")
+                parametros.extend([busqueda, busqueda, busqueda])
+            
+            # Búsqueda por cantidad
+            if cantidad.strip():
+                try:
+                    cantidad_int = int(cantidad)
+                    condiciones.append("cantidad = %s")
+                    parametros.append(cantidad_int)
+                except ValueError:
+                    # messagebox.showwarning("Error", "La cantidad debe ser un número entero")
+                    return []
+            
+            # Construir consulta
+            query = "SELECT * FROM art"
+            if condiciones:
+                query += " WHERE " + " AND ".join(condiciones)
+            query += " LIMIT 100"
+            
+            self.cursor.execute(query, parametros)
+            return self.cursor.fetchall()
+            
+        except Error as e:
+            # messagebox.showerror("Error", f"Error de búsqueda: {e}")
+            return []
+        # finally:
+        #     if conexion.is_connected():
+        #         cursor.close()
+        #         conexion.close()

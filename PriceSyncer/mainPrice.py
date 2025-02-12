@@ -3,6 +3,7 @@ import ttkbootstrap as tb
 import priceB 
 import textwrap
 from tkinter import messagebox
+
 class main():
     def __init__(self):
         self.Back= priceB.connection()
@@ -27,6 +28,10 @@ class main():
         
     def create_widget_precio(self,bind=0):
         if bind==0:
+            def actualizar_texto(opcion_seleccionada):
+                # Cambia el texto del Menubutton
+                self.P_menubutton.config(text=opcion_seleccionada)
+                self.P_control_value.set(opcion_seleccionada)
             self.P_control_value= tb.StringVar(value="1")
             self.delete_widgets()
             self.P_id= tb.Label(self.app, text= "Codigo:", font= ("Arial",  int(15 * self.Back.font)), )
@@ -46,12 +51,15 @@ class main():
             self.P_cantidad= tb.Label(self.app, text= "Cantidad:", font= ("Arial",  int(15 * self.Back.font)))
             self.P_cantidad_value= tb.Entry(self.app, style= "darkly", font= ("Arial",  int(15 * self.Back.font)), width=7)
 
-
-            self.P_menubutton = tb.Menubutton(self.app, text="ml", width=5,style= "darkly", padding=(5,9))
+            self.P_control_value = tk.StringVar(value="Unidad:")
+            self.P_menubutton = tb.Menubutton(self.app,textvariable=self.P_control_value, width=9,style= "darkly", )
             self.P_menu_op = tb.Menu(self.P_menubutton)
-            opciones=["Unidad", "ml","Gramos", "Litros",  "KilosGramos", "Metros", "m³"]
-            for i, opcion in enumerate(opciones, start=1):
-                self.P_menu_op.add_radiobutton(label=opcion, variable=self.P_control_value, value=str(i))
+            opciones=[ "Unidad","ml","Gramos", "Litros",  "KilosGramos", "Metros", "m³"]
+            for opcion in opciones:
+                self.P_menu_op.add_command(
+                    label=opcion,
+                    command=lambda o=opcion: actualizar_texto(o)
+                )
 
             self.P_menubutton.config(menu=self.P_menu_op)
 
@@ -115,7 +123,7 @@ class main():
             self.P_tipo_value.place(relx=0.52, rely=0.27, relheight=0.04, relwidth=0.26) 
             self.P_cantidad.place(relx=0.7871,rely= 0.23)
             self.P_cantidad_value.place(relx= 0.7871, rely=0.27, relheight=0.04, relwidth=0.1)  
-            self.P_menubutton.place(relx=0.9102 ,rely=0.27,relheight=0.045, relwidth=0.072 )
+            self.P_menubutton.place(relx=0.9102 ,rely=0.27,relheight=0.040, relwidth=0.075 )
             barras.place(relx=0, rely=0.3411)
             self.P_departamento.place(relx= 0.0156, rely=0.3906)
             self.P_departamento_value.place(relx= 0.163, rely=0.3906, relheight=0.04, relwidth=0.14)
@@ -160,10 +168,77 @@ class main():
                         'Departamento', 'Pasillo', 'Costo','IVA', 'Ganancia', 
                         "Cant1",'Precio1', 'Cant2', 'Precio2','Cant3', 'Precio3']  
         self.disable_entries(exclude=[self.P_id_value])
-        self.P_precio_value.bind("<FocusOut>", self.agregar_sim)
+        self.P_precio_value.bind("<FocusOut>", lambda event:self.agregar_sim(status=0, event=event))
+        self.P_precioC1_value.bind("<FocusOut>", lambda event:self.agregar_sim(status=1, event=event))
+        self.P_precioC2_value.bind("<FocusOut>", lambda event:self.agregar_sim(status=2, event=event))
+        self.P_precioC3_value.bind("<FocusOut>", lambda event:self.agregar_sim(status=3, event=event))
+        self.P_cantidad1_value.bind("<FocusOut>", lambda event:self.integral(status=1, event=event))
+        self.P_cantidad2_value.bind("<FocusOut>", lambda event:self.integral(status=2, event=event))
+        self.P_cantidad3_value.bind("<FocusOut>", lambda event:self.integral(status=3, event=event))
         self.app.bind("<Escape>", self.menu)  
         self.app.bind("<Return>", self.buscar)  
-          
+        self.app.bind("<F1>", self.SearchByName)
+    def SearchByName(self,event=0):
+           
+            
+            self.frame = tb.Frame(self.app)
+            self.frame.place(rely=0,relheight=1,relwidth=1,relx=0)
+            
+            tb.Label(self.frame, text="Búsqueda General (marca, descripción, sabor):").pack(pady=5)
+            self.entry_busqueda = tb.Entry(self.frame, width=50)
+            self.entry_busqueda.pack(pady=5)
+            self.entry_busqueda.bind("<Return>", self.realizar_busqueda)
+
+            tb.Label(self.frame, text="Cantidad exacta (Sin unidad):").pack(pady=5)
+            self.entry_cantidad = tb.Entry(self.frame, width=20)
+            self.entry_cantidad.pack(pady=5)
+            self.entry_cantidad.bind("<Return>", self.realizar_busqueda)
+            
+            self.btn_buscar = tb.Button(
+                self.frame, text="Buscar", command=self.realizar_busqueda, 
+            )
+            self.btn_buscar.pack(pady=10)
+
+            self.tree = tb.Treeview(
+                self.frame, 
+                columns=("Marca", "Descripción", "Tipo/Sabor", "Cantidad"), 
+                show="headings",
+                height=15
+            )
+            self.tree.heading("Marca", text="Marca")
+            self.tree.heading("Descripción", text="Descripción")
+            self.tree.heading("Tipo/Sabor", text="Tipo/Sabor")
+            self.tree.heading("Cantidad", text="Cantidad ")
+            self.tree.pack(fill="both", expand=True)
+            
+            # Scrollbar
+            scrollbar = tb.Scrollbar(self.tree, orient="vertical", command=self.tree.yview)
+            self.tree.configure(yscroll=scrollbar.set)
+            scrollbar.pack(side="right", fill="y")
+        
+        
+    def realizar_busqueda(self, event=None):
+            terminos_general = self.entry_busqueda.get().strip()
+            cantidad = self.entry_cantidad.get().strip()
+            
+            # Limpiar resultados
+            self.tree.delete(*self.tree.get_children())
+            
+            resultados = self.Back.buscar_productos(terminos_general, cantidad)
+            print(resultados)
+            if not resultados:
+                messagebox.showinfo("Información", "No se encontraron coincidencias")
+                return
+            
+            for producto in resultados:
+                self.tree.insert("", 'end', values=(
+                    producto[4],
+                    producto[5],
+                    producto[6],
+                    producto[7]
+                ))
+                
+
     def borrarOf(self):
         Of= ["cantidad1",'precioC1', 'cantidad2', 'precioC2','cantidad3', 'precioC3']
         for x in Of:
@@ -179,9 +254,11 @@ class main():
             command.append(com.get())
             if not (command[x]== '' or x==2):
                 dic.update({f'{self.colsql[x]}':f'{command[x]}'})
+                
             if command[x]=='':
                 dic.update({f'{self.colsql[x]}':'NULL'})
         self.Back.guardar(dic, self.P_id_value.get())
+
         self.clean()
 
     def buscar(self,event=0):
@@ -206,49 +283,80 @@ class main():
                 command= getattr(self, f'P_{y}_value')
                 if result[x] and not (x==3 or x==8):
                     command.insert(0, result[x])
+                elif result[x] and x==8:
+                    self.P_control_value.set(result[x])
                 else:
                     continue
         else:
             self.buscar() 
                   
     def clean(self, event=0):
+
         self.P_id_value.config(state= 'normal')
         for widget in self.app.winfo_children():
             if isinstance(widget, tb.Entry):
                 widget.delete(0, tb.END)
+        self.P_control_value.set('Unidad:') 
         self.app.bind("<Return>", self.buscar)
         self.app.bind("<Escape>", self.menu) 
         self.disable_entries(exclude=[self.P_id_value])
 
-    def agregar_sim(self, event=0):
-        self.P_precio_value = event.widget  
-        contenido = self.P_precio_value.get()  
-
-   
-        if contenido.startswith("$"):
-            numero = contenido[2:]
-            numero2=contenido[1:]
-            if numero2.replace(".", "", 1).isdigit() and numero2.count(".") < 2:
-                self.P_precio_value.delete(0, tk.END)  
-                self.P_precio_value.insert(0, f"$ {float(numero2):.2f}") 
-                
-                return 
-            else:
-                if numero.replace(".", "", 1).isdigit() and numero.count(".") < 2:
-                    self.P_precio_value.delete(0, tk.END)  
-                    self.P_precio_value.insert(0, f"$ {float(numero):.2f}")
-                    return 
-                else:
-                    self.P_precio_value.delete(0, tk.END)  
-                    return
+    def agregar_sim(self, status=0, event=None):
+            # Mapear los status a los diferentes Entry widgets
+            entries = {
+                0: self.P_precio_value,
+                1: self.P_precioC1_value,
+                2: self.P_precioC2_value,
+                3: self.P_precioC3_value
+            }
             
+            # Obtener el Entry correspondiente al status
+            entry = entries.get(status)
+            if not entry:
+                return
 
+            contenido = entry.get()
+            
+            # Eliminar símbolos de formato existentes
+            raw_value = contenido.replace("$", "").strip()
+            
+            try:
+                # Intentar convertir a float
+                numeric_value = float(raw_value)
+                # Formatear con 2 decimales y símbolo $
+                formatted = f"$ {numeric_value:.2f}"
+                entry.delete(0, tk.END)
+                entry.insert(0, formatted)
+            except ValueError:
+                # Si no es número válido, limpiar el campo
+                entry.delete(0, tk.END)
+     
+    def integral(self,status, event=0):
+            entries = {
 
-        if contenido.isdigit() or (contenido.replace(".", "", 1).isdigit() and contenido.count(".") < 2):
-            self.P_precio_value.delete(0, tk.END)  
-            self.P_precio_value.insert(0, f"$ {float(contenido):.2f}") 
-        else:
-            self.P_precio_value.delete(0, tk.END)
+                1: self.P_cantidad1_value,
+                2: self.P_cantidad2_value,
+                3: self.P_cantidad3_value
+            }
+            entry=entries.get(status)
+            valor=entry.get()
+            if status==1:
+                valor1=self.P_cantidad2_value.get()
+                valor2=self.P_cantidad3_value.get()
+            elif status==2:
+                valor1=self.P_cantidad1_value.get()
+                valor2=self.P_cantidad3_value.get()
+            elif status==3:
+                valor1=self.P_cantidad2_value.get()
+                valor2=self.P_cantidad1_value.get()
+            if valor=="":
+                pass
+            elif not valor.isdigit():
+                entry.delete(0, tk.END)
+                messagebox.showerror("Error", "Verifique el valor")
+            elif valor==valor1 or valor==valor2: 
+                entry.delete(0, tk.END)
+                messagebox.showerror("Error", "Cantidad de Oferta Repetida")
     def entrada(self):
             self.precio= tb.Button(self.app,
             text="Precio", style= "darkly",command=self.create_widget_precio)

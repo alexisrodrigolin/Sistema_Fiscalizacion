@@ -12,6 +12,7 @@ class connection():
         user=f"{self.datos['User']}",
         password=f"{self.datos['Password']}",
         database= "TEST"
+        
         )
         if not self.mydb.is_connected(): exit()
         self.cursor= self.mydb.cursor()   

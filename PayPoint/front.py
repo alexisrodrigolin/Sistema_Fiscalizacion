@@ -5,6 +5,7 @@ import back
 import textwrap
 from tkinter import messagebox
 from datetime import date
+import math
 
 
 class caja():
@@ -78,19 +79,35 @@ class caja():
         self.User.focus()
 
     def create_widget_paypoint(self):
+        self.OFstatus=1
+        def change_OFstatus(status):
+           
+            if self.Bend.subtotal==0.00:
+                if status==1:
+                    self.OFstatus=1
+                    button4.config(text="Ofertas ap ✔ ", bootstyle="success")      
+                    button5.config(text="SIN ofertas ap ", bootstyle="dark")        
+                elif status==0:
+                    self.OFstatus=0
+                    button4.config(text="Ofertas ap ", bootstyle="dark")      
+                    button5.config(text="SIN ofertas ap ✔", bootstyle="success")        
+            else:
+                self.mostrar_error("Cancele el tique para cambiar estado", 1)
         try:
             self.delete_widgets()
             detallado = tb.Frame(self.app, )
             scrollbar = tb.Scrollbar(detallado, orient="vertical", style="Custom.Vertical.TScrollbar")
-            tree = ("Cantidad", "Descripcion", "Monto")
+            tree = ("Cantidad", "Descripcion", "MontoU","Monto")
             self.detalles = tb.Treeview(detallado, columns=tree, show="headings", style="Custom.Treeview",
                                         yscrollcommand=scrollbar.set)
             self.detalles.heading("Cantidad", text="Cantidad", anchor="w")
             self.detalles.heading("Descripcion", text="Descripcion", anchor="w")
-            self.detalles.heading("Monto", text="Precio", anchor="center")
-            self.detalles.column("Cantidad", width=50, anchor="w")
+            self.detalles.heading("MontoU", text="Precio Uni", anchor="e")
+            self.detalles.heading("Monto", text="Precio", anchor="e")
+            self.detalles.column("Cantidad", width=5, anchor="center")
             self.detalles.column("Descripcion", width=200, anchor="w")
-            self.detalles.column("Monto", width=100, anchor="center")
+            self.detalles.column("MontoU", width=70, anchor="e")
+            self.detalles.column("Monto", width=70, anchor="e")
             self.detalles.insert('', 'end', values=(" ", " ", " "))
             scrollbar.config(command=self.detalles.yview)
             self.detalles.pack(side="left", fill="both", expand=True)
@@ -127,10 +144,10 @@ class caja():
             button3 = tb.Button(self.app, bootstyle="info", text="Anular")
             button3.place(relx=0.9, rely=0.39, relheight=0.07, relwidth=0.1)
             self.buttons.append(button3)
-            button4 = tb.Button(self.app, bootstyle="success", text="Ofertas ap ✔")
+            button4 = tb.Button(self.app, bootstyle="success", text="Ofertas ap ✔", command=lambda: change_OFstatus(1))
             button4.place(relx=0.9, rely=0.5, relheight=0.07, relwidth=0.1)
             self.buttons.append(button4)
-            button5 = tb.Button(self.app, bootstyle="dark", text="SIN ofertas ap")
+            button5 = tb.Button(self.app, bootstyle="dark", text="SIN ofertas ap", command=lambda: change_OFstatus(0))
             button5.place(relx=0.9, rely=0.57, relheight=0.07, relwidth=0.1)
             self.buttons.append(button5)
             button6 = tb.Button(self.app, bootstyle="dark", text="Nota Credito")
@@ -258,8 +275,13 @@ class caja():
             self.sales.grid(column=3, row=11)
             self.pay.grid(column=3, row=10)
 
-    def items(self, event=0, status=0):
-        content = self.entrada.get()
+    def items(self, event=0, status=0,Re=0, values=0,extra=0):
+        if Re:
+            content=Re
+        else:
+            content = self.entrada.get()
+        cantOf=0
+        self.ppbind()
         position = content.find('*')  # Encuentra la posición del asterisco
         if position!= -1:
             codigo = content[(position + 1):]
@@ -278,21 +300,110 @@ class caja():
         elif result==0 and status==1:
             self.mostrar_error("Articulo NO Registrado",5)
         else:
-            net = ''
-            value = result[5] * mult
+            of=1
+            if not self.OFstatus:
+                value = result[5] * mult
+                resto=0
+                net = ''    
+                price=result[5]
+               
+            elif self.OFstatus:
+                variables = [(result[6], result[7]), ( result[8], result[9]), (result[10], result[11])]
+                ordenadas = sorted(variables, key=lambda x: (x[0] is not None, x[0] if x[0] is not None else float('-inf')), reverse=True)
+           
+                if ordenadas[0][0] <= mult and ordenadas[0][0] is not None:
+                    of=ordenadas[0][0]
+                    enteros= math.floor(mult/ordenadas[0][0])
+                    cantOf=(enteros*ordenadas[0][0])
+                    resto= mult-cantOf
+                    value=cantOf* ordenadas[0][1]
+                    net = 'PROMO '
+                    price=ordenadas[0][1]
+                elif ordenadas[1][0] is not None  and ordenadas[1][0] <= mult:
+                    of=ordenadas[1][0]
+                    enteros= math.floor(mult/ordenadas[1][0])
+                    cantOf=(enteros*ordenadas[1][0])
+                    resto= mult-cantOf
+                    value=cantOf* ordenadas[1][1]
+                    price=ordenadas[1][1]
+                    net = 'PROMO '
+                elif ordenadas[2][0] is not None  and ordenadas[2][0] <= mult:
+                    of=ordenadas[2][0]
+                    enteros= math.floor(mult/ordenadas[2][0])
+                    cantOf=(enteros*ordenadas[2][0])
+                    resto= mult-cantOf
+                    value=cantOf* ordenadas[2][1]
+                    price=ordenadas[2][1]
+                    net = 'PROMO '
+                else:
+                    price=result[5]
+                    resto=0
+                    net = ''
+                    value=mult*price
             for x in range(3):
                 if result[x]: net += f"{result[x]} "
             if status==0:
-                self.detalles.insert('', 'end', values=(f"{mult}", f"{net}", f"$ {value:.2f} "))
-                self.Bend.suma(Descripcion=f"{net}", Precio=result[5], Plu=f"{codigo}", Cantidad=mult)
+                if cantOf:
+                    self.detalles.insert('', 'end', values=(f"{cantOf}", f"{net}",f'$ {price:.2f}', f"$ {value:.2f}"))
+                else:
+                    self.detalles.insert('', 'end', values=(f"{mult}", f"{net}",f'$ {price:.2f}', f"$ {value:.2f}"))
+                self.Bend.suma(Descripcion=f"{net}", Precio=price, Plu=f"{codigo}", Cantidad=mult, cantOF=of)
                 self.total.config(text=f'$ {self.Bend.subtotal:.2f}')
                 self.cantidad.config(text=f'{self.Bend.cant}')
-            elif status==1:
-                
-                self.Pitem.config(text= f"{net} x{mult}")    
-                self.Pprice.config(text= f"$ {value:.2f}")
-
-                
+            elif status==1 and resto==0:
+                if extra:
+                    self.Pitem.config(text= f"PROMO {net} x{mult+extra}")    
+                else:
+                    self.Pitem.config(text= f"{net} x{mult+extra}")    
+                self.Pprice.config(text= f"$ {(value+values):.2f}")
+            elif status==2:
+                if cantOf:
+                    self.detalles.insert('', 'end', values=(f"- {cantOf}", f"{net}",f'- $ {price:.2f}', f"- $ {value:.2f}"))
+                else:
+                    self.detalles.insert('', 'end', values=(f"- {mult}", f"{net}",f'- $ {price:.2f}', f"- $ {value:.2f}"))
+                self.Bend.suma(Descripcion=f"{net}", Precio=price, Plu=f"{codigo}", Cantidad=(mult*(-1)))
+                self.total.config(text=f'$ {self.Bend.subtotal:.2f}')
+                self.cantidad.config(text=f'{self.Bend.cant}')
+            if resto and (status==0 or status==2):
+                self.items(Re=f"{resto}*{codigo}",status=status)
+            elif resto and status==1:
+                self.items(Re=f"{resto}*{codigo}",status=status, values=+value,extra=cantOf)
+    def password(self, event=0, status=0):
+        def read(event=0):
+            if cont.get()== self.Bend.datos["SuperPass"]:
+                passw.destroy()
+                self.ppbind()             
+                if status==1:
+                    self.cancelar_anular(1)    
+                elif status==0:
+                    self.app.bind("<Return>", lambda event: self.cancelar_anular(event=event, status=0))
+                    # self.app.bind("<+>", lambda event: self.almacen(event=event, type= "Almacén",status=2))
+                    # self.app.bind("<F1>", lambda event: self.precio(event))
+                    # self.app.bind("<F2>", lambda event: self.password(event=event, status=0))
+                    # self.app.bind("<F3>", lambda event: self.password(event=event, status=1))
+                    # self.app.bind("<F4>", self.Resume)
+                    # self.app.bind("<F5>", lambda event: self.almacen(event=event, type=  "Fiambrería",status=2))
+                    # self.app.bind("<F6>", lambda event: self.almacen(event=event, type= "Verdulería",status=2))
+                    # self.app.bind("<F7>", lambda event: self.almacen(event=event, type=  "Carnicería",status=2))
+                    # self.app.bind("<F8>", lambda event: self.almacen(event=event, type= "Frío/Bolsa",status=2))
+                    # self.app.bind("<F9>", lambda event: self.almacen(event=event, type= "Envase",status=2))
+                    # self.app.bind("<F10>", lambda event: self.almacen(event=event, type=  "Bazar",status=2))
+            else: 
+                error.pack(pady=20)
+        if self.Bend.subtotal==0.00 and status==0:
+            self.mostrar_error("No hay Item para Cancelar", 1)
+            return
+        color= 'grey'
+        passw=tk.Frame(self.app)
+        passw.config(background=color)
+        passw.place(relheight=0.5,relwidth=0.5, rely=0.2, relx=0.25)
+        tb.Label(passw, text= 'Ingrese contraseña de Supervisor', background='grey',font=("arial", int(30 * self.Bend.font))).pack(pady=10)
+        self.app.bind("<Return>", read)
+        cont=tb.Entry(passw, font=("arial", int(30 * self.Bend.font)) )
+        error=tb.Label(passw,text= "Contraseña Incorrecta",foreground='red', background='grey',font=("arial", int(15 * self.Bend.font)))
+        cont.pack(pady=20)
+        cont.focus_set()
+        self.app.bind("<Escape>", lambda event: (self.ppbind(event), passw.destroy()))
     def precio(self,event):
         color= 'grey'
         self.Precio=tk.Frame(self.app)
@@ -316,6 +427,7 @@ class caja():
         self.app.bind("<F10>", lambda event: self.almacen(event=event, type="Bazar",status=1))
     def almacen(self,type,event=0,status=0, ):
         content = self.entrada.get()[:-1] if type == 'Almacén' else self.entrada.get()
+        self.ppbind()
         if not content:
             return
         position = content.find('*')
@@ -339,14 +451,18 @@ class caja():
         else:
             value = mult * codigo
             if status==0:
-                self.detalles.insert('', 'end', values=(f"{mult}", f"{type}", f"$ {value:.2f} "))
+                self.detalles.insert('', 'end', values=(f"{mult}", f"{type}",f"$ {codigo:.2f}", f"$ {value:.2f}"))
                 self.Bend.suma(Descripcion=f"{type}", Cantidad=mult,  Precio=codigo, Plu='11111111')
                 self.total.config(text=f'$ {self.Bend.subtotal:.2f}')
                 self.cantidad.config(text=f'{self.Bend.cant}')
             elif status==1:
                 self.Pitem.config(text= f"{type} x{mult}")    
                 self.Pprice.config(text= f"$ {value:.2f}")
-
+            elif status==2:
+                self.detalles.insert('', 'end', values=(f"- {mult}", f"{type}",f"- $ {codigo:.2f}", f"- $ {value:.2f}"))
+                self.Bend.suma(Descripcion=f"{type}", Cantidad=(mult*(-1)),  Precio=codigo, Plu='11111111')
+                self.total.config(text=f'$ {self.Bend.subtotal:.2f}')
+                self.cantidad.config(text=f'{self.Bend.cant}')
     def delete_widgets(self):
         self.ppunbind()
         for widget in self.app.winfo_children():
@@ -367,8 +483,8 @@ class caja():
         self.app.bind("<Return>", lambda event: self.items(event, 0))
         self.app.bind("<+>", lambda event: self.almacen(event=event, type= "Almacén"))
         self.app.bind("<F1>", lambda event: self.precio(event))
-        self.app.bind("<F2>", lambda event: self.cancelar_anular(event=event, status=0))
-        self.app.bind("<F3>", lambda event: self.cancelar_anular(event=event, status=1))
+        self.app.bind("<F2>", lambda event: self.password(event=event, status=0))
+        self.app.bind("<F3>", lambda event: self.password(event=event, status=1))
         self.app.bind("<F4>", self.Resume)
         self.app.bind("<F5>", lambda event: self.almacen(event=event, type=  "Fiambrería"))
         self.app.bind("<F6>", lambda event: self.almacen(event=event, type= "Verdulería"))
@@ -376,12 +492,12 @@ class caja():
         self.app.bind("<F8>", lambda event: self.almacen(event=event, type= "Frío/Bolsa"))
         self.app.bind("<F9>", lambda event: self.almacen(event=event, type= "Envase"))
         self.app.bind("<F10>", lambda event: self.almacen(event=event, type=  "Bazar"))
-        self.entrada.focus()
-
+        self.entrada.focus_set()
 
     def menu(self, event=0):
         if self.Bend.subtotal == 0:
             self.ppunbind()
+            self.cancelar_anular(1)
             for widget in self.app.winfo_children():
                 widget.destroy()
             self.numberCaja = tb.Label(self.app, text="- Caja 1",
@@ -552,21 +668,64 @@ class caja():
             self.detalles.delete(*self.detalles.get_children())
             self.cantidad.config(text= f'{self.Bend.cant}')
             self.total.config(text=f'$ {self.Bend.subtotal:.2f}')
-        else:
-            pass
+        elif status==0:
+            content=self.entrada.get()
+            position = content.find('*')  # Encuentra la posición del asterisco
+            if position!= -1:
+                codigo = content[(position + 1):]
+                check = content[:position]
+                if check.isdigit():
+                    mult = int(check)
+                else:
+                    codigo = content
+            else:
+                codigo = content
+                mult = 1
+            valor = codigo if codigo.isdigit() else 0
+            totalC=0
+            resultados = [item for item in self.Bend.internal if item[2] == valor]
+            res_ordenado = sorted(resultados, key=lambda x: x[3])
+            print(res_ordenado)
+            print(self.Bend.internal)
+            for x in res_ordenado:
+                totalC+=x[3]
+            print(totalC)
+            if (not res_ordenado) or totalC< mult:
+                self.mostrar_error("Producto NO Facturado",1)
+            else:
+                subC=0
+                eliminacion=[]
+                for x in res_ordenado:
+                    if x[3]>=mult and x[4] % mult==0:
+
+                        self.Bend.internal = [t for t in self.Bend.internal if not t[5]==x[5]]
+                        RestoFacturado= x[3]- mult
+                        self.Bend.nitem+=1
+                        item=(x[0],x[1],x[2],RestoFacturado, x[4],self.Bend.nitem)
+                        if RestoFacturado>0: self.Bend.internal.append(item)
+                        self.items(status=2,Re=f'{mult}*{valor}')
+                        return
+                      
+                    elif mult>subC:
+                        subC+=x[3]
+                        eliminacion.append(x)                
+                    else:
+                        break
 
     def mostrar_error(self, error, state=0):
+        self.ppunbind()
         def dividir_cadena(cadena):
             return '\n'.join(textwrap.wrap(cadena, width=30))
         message= dividir_cadena(f"{error}")
         error_window = tb.Toplevel(self.app)
-        self.ppunbind()
+
         error_window.title("Error")
         error_window.geometry("600x400")
         error_window.resizable(False, False)  
         error_window.config(background="#39384B")
         ancho_pantalla = error_window.winfo_screenwidth()
         alto_pantalla = error_window.winfo_screenheight()
+        self.app.focus_set()
         pos_x = (ancho_pantalla - 600) // 2
         pos_y = (alto_pantalla - 400) // 2
         error_window.geometry(f"{600}x{400}+{pos_x}+{pos_y}")
@@ -598,7 +757,7 @@ class caja():
         self.app.bind("<F1>", lambda event: self.cierre('z', event))
         self.app.bind("<F2>", lambda event: self.cierre('x', event))
         self.app.bind("<F3>", lambda event: self.Auditoria(event))
-        print('1')
+   
     def Sales(self):
         try:
             self.sales = tk.Frame(self.app)

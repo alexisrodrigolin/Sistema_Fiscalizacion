@@ -249,13 +249,15 @@ class main():
         command= []
         precio= self.P_precio_value.get()
         dic={'Precio':f'{precio[2:]}'}
+
         for x in range(len(self.orden)):
             com=getattr(self, f'P_{self.orden[x]}_value')
             command.append(com.get())
-            if not (command[x]== '' or x==2):
+            if not (command[x]== '' or x==2 or x==14 or x==16 or x==18):
                 dic.update({f'{self.colsql[x]}':f'{command[x]}'})
-                
-            if command[x]=='':
+            elif (not command[x]== '') and (x==14 or x==16 or x==18):
+                dic.update({f'{self.colsql[x]}':f'{command[x][2:]}'})  
+            elif command[x]=='':
                 dic.update({f'{self.colsql[x]}':'NULL'})
         self.Back.guardar(dic, self.P_id_value.get())
 
@@ -275,16 +277,18 @@ class main():
             self.able_entries()
 
             self.P_id_value.delete(0, tb.END)
-            self.P_id_value.insert(0, result[0])
-            self.P_precio_value.insert(0, f'$ {result[3]:.2f}')
+            self.P_id_value.insert(0, str(result[0]))
+
             self.P_id_value.config(state= "readonly")
 
             for x, y in enumerate(self.orden, start=1):
                 command= getattr(self, f'P_{y}_value')
-                if result[x] and not (x==3 or x==8):
+                if result[x] and not (x==3 or x==8 or x==15 or x==17 or x==19):
                     command.insert(0, result[x])
                 elif result[x] and x==8:
                     self.P_control_value.set(result[x])
+                elif result[x] and (x==3 or x==15 or x==17 or x==19):
+                    command.insert(0, f"$ {result[x]:.2f}")
                 else:
                     continue
         else:

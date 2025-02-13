@@ -1,3 +1,4 @@
+
 import mysql.connector as sql
 import win32com.client as winc
 import json
@@ -16,7 +17,9 @@ class Logic:
         host=f"{self.datos['Db']}",
         user=f"{self.datos['User']}",
         password=f"{self.datos['Password']}",
-        database= "TEST"
+        database= "TEST",
+        autocommit=True,
+         
         )
 
         if not self.mydb.is_connected(): exit()
@@ -24,6 +27,7 @@ class Logic:
         self.subtotal= 0.00
         self.cant=0
         self.tique=[]
+        self.internal=[]
         self.comnum= int(self.datos["Com"])
         self.baudrate= int(self.datos["Baudrate"])
         self.valid_users = {
@@ -31,33 +35,43 @@ class Logic:
             "admin": '888888',
             "1": "1",  
         }
-
+        self.nitem=0
         
         
-    def suma(self,Descripcion='',Plu='',Precio= 0,Cantidad=0 , refresh= 0):
+    def suma(self,Descripcion='',Plu='',Precio= 0,Cantidad=0 , cantOF=1, refresh= 0):
+        
         if refresh ==1:
             self.subtotal=0.00
             self.cant=0
+            self.nitem=0
             self.tique.clear()
+            self.internal.clear()
         else:
             self.subtotal+= Precio*Cantidad
             self.cant+= Cantidad
+            self.nitem+=1 
             item=(Descripcion,Precio,Plu,Cantidad)
+            inter=(Descripcion,Precio,Plu,Cantidad, cantOF,self.nitem)
+            if Cantidad>0: self.internal.append(inter)
             self.tique.append(item)
-            print(self.tique)
+            print(self.internal)
+            
+
 
     def validate_user(self, username, password):
         return self.valid_users.get(username) == password
         
     def item(self,PLU):
-        instruction= f'SELECT Marca, Descripcion, Tipo_Sabor, Cantidad, Unidad, Precio FROM Art WHERE PLU= {PLU}'
-        instruction2= f'SELECT Marca, Descripcion, Tipo_Sabor, Cantidad, Unidad, Precio FROM Art WHERE PLU2= {PLU}'
+        instruction= f'SELECT SQL_NO_CACHE Marca, Descripcion, Tipo_Sabor, Cantidad, Unidad, Precio, Cant1, Precio1, Cant2, Precio2, Cant3, Precio3 FROM Art WHERE PLU= {PLU}'
+        instruction2= f'SELECT SQL_NO_CACHE Marca, Descripcion, Tipo_Sabor, Cantidad, Unidad, Precio, Cant1, Precio1, Cant2, Precio2, Cant3, Precio3 FROM Art WHERE PLU2= {PLU}'
         self.cursor.execute(instruction)
         result= self.cursor.fetchone()
         self.cursor.execute(instruction2)
         result2=self.cursor.fetchone()
         if result:
+          
             return result
+            
         elif result2:
             return result2
         else:
@@ -249,15 +263,26 @@ class Logic:
                     self.cmd_error("AbrirTique",drv)
                     exit()
                 for x in self.tique:
-                    drv.IFOpBegin("ItemVenta")
-                    drv.IFOpParamSet("Descripcion", f'{x[0]}')
-                    drv.IFOpParamFloatSet("Precio", x[1])
-                    drv.IFOpParamFloatSet("IVA", 21.0)
-                    drv.IFOpParamSet("CodigoProducto", f"{x[2]}")
-                    drv.IFOpParamFloatSet("Cantidad", x[3])
-                    if not drv.IFOpSend(1):
-                        self.cmd_error("ItemVenta",drv)
-                        exit()
+                    if x[3]<0:
+                        drv.IFOpBegin("ItemRetorno")
+                        drv.IFOpParamSet("Descripcion", f'{x[0]}')
+                        drv.IFOpParamFloatSet("Precio", abs(x[1]))
+                        drv.IFOpParamFloatSet("IVA", 21.0)
+                        drv.IFOpParamSet("CodigoProducto", f"{x[2]}")
+                        drv.IFOpParamFloatSet("Cantidad", abs(x[3]))
+                        if not drv.IFOpSend(1):
+                            self.cmd_error("ItemRetorno",drv)
+                            exit()
+                    else:
+                        drv.IFOpBegin("ItemVenta")
+                        drv.IFOpParamSet("Descripcion", f'{x[0]}')
+                        drv.IFOpParamFloatSet("Precio", x[1])
+                        drv.IFOpParamFloatSet("IVA", 21.0)
+                        drv.IFOpParamSet("CodigoProducto", f"{x[2]}")
+                        drv.IFOpParamFloatSet("Cantidad", x[3])
+                        if not drv.IFOpSend(1):
+                            self.cmd_error("ItemVenta",drv)
+                            exit()
                 if extra:
                     drv.IFOpBegin("DescuentoGeneral")
                     drv.IFOpParamSet("Descripcion", "Bonificación:")

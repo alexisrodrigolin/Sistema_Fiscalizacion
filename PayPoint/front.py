@@ -6,7 +6,7 @@ import textwrap
 from tkinter import messagebox
 from datetime import date
 import math
-
+import itertools
 
 class caja():
 
@@ -345,9 +345,10 @@ class caja():
             if status==0:
                 if cantOf:
                     self.detalles.insert('', 'end', values=(f"{cantOf}", f"{net}",f'$ {price:.2f}', f"$ {value:.2f}"))
+                    self.Bend.suma(Descripcion=f"{net}", Precio=price, Plu=f"{codigo}", Cantidad=cantOf, cantOF=of)
                 else:
                     self.detalles.insert('', 'end', values=(f"{mult}", f"{net}",f'$ {price:.2f}', f"$ {value:.2f}"))
-                self.Bend.suma(Descripcion=f"{net}", Precio=price, Plu=f"{codigo}", Cantidad=mult, cantOF=of)
+                    self.Bend.suma(Descripcion=f"{net}", Precio=price, Plu=f"{codigo}", Cantidad=mult, cantOF=of)
                 self.total.config(text=f'$ {self.Bend.subtotal:.2f}')
                 self.cantidad.config(text=f'{self.Bend.cant}')
             elif status==1 and resto==0:
@@ -377,17 +378,13 @@ class caja():
                     self.cancelar_anular(1)    
                 elif status==0:
                     self.app.bind("<Return>", lambda event: self.cancelar_anular(event=event, status=0))
-                    # self.app.bind("<+>", lambda event: self.almacen(event=event, type= "Almacén",status=2))
-                    # self.app.bind("<F1>", lambda event: self.precio(event))
-                    # self.app.bind("<F2>", lambda event: self.password(event=event, status=0))
-                    # self.app.bind("<F3>", lambda event: self.password(event=event, status=1))
-                    # self.app.bind("<F4>", self.Resume)
-                    # self.app.bind("<F5>", lambda event: self.almacen(event=event, type=  "Fiambrería",status=2))
-                    # self.app.bind("<F6>", lambda event: self.almacen(event=event, type= "Verdulería",status=2))
-                    # self.app.bind("<F7>", lambda event: self.almacen(event=event, type=  "Carnicería",status=2))
-                    # self.app.bind("<F8>", lambda event: self.almacen(event=event, type= "Frío/Bolsa",status=2))
-                    # self.app.bind("<F9>", lambda event: self.almacen(event=event, type= "Envase",status=2))
-                    # self.app.bind("<F10>", lambda event: self.almacen(event=event, type=  "Bazar",status=2))
+                    self.app.bind("<+>", lambda event: self.almacen(event=event, type= "Almacén",status=2))
+                    self.app.bind("<F5>", lambda event: self.almacen(event=event, type=  "Fiambrería",status=2))
+                    self.app.bind("<F6>", lambda event: self.almacen(event=event, type= "Verdulería",status=2))
+                    self.app.bind("<F7>", lambda event: self.almacen(event=event, type=  "Carnicería",status=2))
+                    self.app.bind("<F8>", lambda event: self.almacen(event=event, type= "Frío/Bolsa",status=2))
+                    self.app.bind("<F9>", lambda event: self.almacen(event=event, type= "Envase",status=2))
+                    self.app.bind("<F10>", lambda event: self.almacen(event=event, type=  "Bazar",status=2))
             else: 
                 error.pack(pady=20)
         if self.Bend.subtotal==0.00 and status==0:
@@ -459,10 +456,23 @@ class caja():
                 self.Pitem.config(text= f"{type} x{mult}")    
                 self.Pprice.config(text= f"$ {value:.2f}")
             elif status==2:
-                self.detalles.insert('', 'end', values=(f"- {mult}", f"{type}",f"- $ {codigo:.2f}", f"- $ {value:.2f}"))
-                self.Bend.suma(Descripcion=f"{type}", Cantidad=(mult*(-1)),  Precio=codigo, Plu='11111111')
-                self.total.config(text=f'$ {self.Bend.subtotal:.2f}')
-                self.cantidad.config(text=f'{self.Bend.cant}')
+                resultados = [item for item in self.Bend.internal if (item[0] == type and item[1]==codigo)]
+                sumainterna=0
+                for values in resultados:
+                    sumainterna+= values[3]
+                if resultados and sumainterna>=mult:
+                    self.detalles.insert('', 'end', values=(f"- {mult}", f"{type}",f"- $ {codigo:.2f}", f"- $ {value:.2f}"))
+                    self.Bend.suma(Descripcion=f"{type}", Cantidad=(mult*(-1)),  Precio=codigo, Plu='11111111')
+                    self.total.config(text=f'$ {self.Bend.subtotal:.2f}')
+                    self.cantidad.config(text=f'{self.Bend.cant}')
+                   
+                    self.Bend.internal = [t for t in self.Bend.internal if not (t[0]==type and t[1]== codigo)]
+                    RestoFacturado= sumainterna- mult
+                    self.Bend.nitem+=1
+                    item=(f"{type}",codigo, '11111111', RestoFacturado,1,self.Bend.nitem)
+                    if RestoFacturado>0: self.Bend.internal.append(item)
+                else:
+                    self.mostrar_error("Producto NO Facturado",1)
     def delete_widgets(self):
         self.ppunbind()
         for widget in self.app.winfo_children():
@@ -685,8 +695,24 @@ class caja():
             totalC=0
             resultados = [item for item in self.Bend.internal if item[2] == valor]
             res_ordenado = sorted(resultados, key=lambda x: x[3])
-            print(res_ordenado)
-            print(self.Bend.internal)
+
+                        
+            def encontrar_combinacion(numeros, objetivo):
+
+                numeros_ordenados = sorted(numeros)
+                mejor_suma = float('inf')
+                mejor_combinacion = None
+        
+                for longitud in range(1, len(numeros_ordenados) + 1):
+                    for combinacion in itertools.combinations(numeros_ordenados, longitud):
+                        suma_actual = sum(combinacion)
+                        if suma_actual >= objetivo:
+                            if suma_actual == objetivo:
+                                return combinacion
+                            if suma_actual < mejor_suma:
+                                mejor_suma = suma_actual
+                                mejor_combinacion = combinacion
+                return mejor_combinacion
             for x in res_ordenado:
                 totalC+=x[3]
             print(totalC)
@@ -696,22 +722,37 @@ class caja():
                 subC=0
                 eliminacion=[]
                 for x in res_ordenado:
-                    if x[3]>=mult and x[4] % mult==0:
-
+                    subC+=x[3]
+                    eliminacion.append(x)  
+                    if x[3]>=mult and mult% x[4] ==0:
+         
                         self.Bend.internal = [t for t in self.Bend.internal if not t[5]==x[5]]
                         RestoFacturado= x[3]- mult
                         self.Bend.nitem+=1
                         item=(x[0],x[1],x[2],RestoFacturado, x[4],self.Bend.nitem)
                         if RestoFacturado>0: self.Bend.internal.append(item)
                         self.items(status=2,Re=f'{mult}*{valor}')
+                        return    
+                    elif mult<=subC:
+                        valores=[]
+                        
+                        for w in eliminacion:
+                            valores.append(w[3])
+                        resultado=encontrar_combinacion(valores,mult) 
+                        sumainterna=0
+                        for nums in resultado:
+                            sumainterna+=nums
+                            for i, t in enumerate(self.Bend.internal):
+                                if t[3] == nums and t[2] == valor:
+                                    del self.Bend.internal[i]  # Elimina el primer elemento que cumple la condición
+                                    break 
+                            print(self.Bend.internal)
+                            
+                           
+                            self.items(status=2,Re=f'{nums}*{valor}')
+                        resto=sumainterna-mult
+                        if resto: self.items(status=0,Re=f'{resto}*{valor}')
                         return
-                      
-                    elif mult>subC:
-                        subC+=x[3]
-                        eliminacion.append(x)                
-                    else:
-                        break
-
     def mostrar_error(self, error, state=0):
         self.ppunbind()
         def dividir_cadena(cadena):

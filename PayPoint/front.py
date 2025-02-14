@@ -7,6 +7,7 @@ from tkinter import messagebox
 from datetime import date
 import math
 import itertools
+import copy
 
 class caja():
 
@@ -54,7 +55,7 @@ class caja():
             troughcolor="#F1EAD7",
             arrowcolor="black",
         )
-        self.buttons = []
+
         self.create_widget_menu()
         self.app.bind("<Return>", self.check)
         self.columnas_rows(col=8, row=15)
@@ -80,9 +81,11 @@ class caja():
 
     def create_widget_paypoint(self):
         self.OFstatus=1
+        self.guardado=0
+        self.suspendido=[]
         def change_OFstatus(status):
            
-            if self.Bend.subtotal==0.00:
+            if not self.detalles.get_children():
                 if status==1:
                     self.OFstatus=1
                     button4.config(text="Ofertas ap ✔ ", bootstyle="success")      
@@ -135,24 +138,24 @@ class caja():
             self.cantidad.place(relx=0.8, rely=0.0, relwidth=0.25, relheight=0.2)
             self.entrada.place(relx=0.2, rely=0.8, relwidth=0.8, relheight=0.2)
 
-            button1 = tb.Button(self.app, bootstyle="dark", text="Precio")
+            button1 = tb.Button(self.app, bootstyle="dark", text="Precio", command=lambda:self.precio())
             button1.place(relx=0.9, rely=0.25, relheight=0.07, relwidth=0.1)
-            self.buttons.append(button1)
-            button2 = tb.Button(self.app, bootstyle="info", text="Cancelar")
+        
+            button2 = tb.Button(self.app, bootstyle="info", text="Cancelar",command=lambda: self.password(status=1))
             button2.place(relx=0.9, rely=0.32, relheight=0.07, relwidth=0.1)
-            self.buttons.append(button2)
-            button3 = tb.Button(self.app, bootstyle="info", text="Anular")
+     
+            button3 = tb.Button(self.app, bootstyle="info", text="Anular", command=lambda: self.password(status=0))
             button3.place(relx=0.9, rely=0.39, relheight=0.07, relwidth=0.1)
-            self.buttons.append(button3)
+        
             button4 = tb.Button(self.app, bootstyle="success", text="Ofertas ap ✔", command=lambda: change_OFstatus(1))
             button4.place(relx=0.9, rely=0.5, relheight=0.07, relwidth=0.1)
-            self.buttons.append(button4)
+          
             button5 = tb.Button(self.app, bootstyle="dark", text="SIN ofertas ap", command=lambda: change_OFstatus(0))
             button5.place(relx=0.9, rely=0.57, relheight=0.07, relwidth=0.1)
-            self.buttons.append(button5)
-            button6 = tb.Button(self.app, bootstyle="dark", text="Nota Credito")
-            button6.place(relx=0.9, rely=0.64, relheight=0.07, relwidth=0.1)
-            self.buttons.append(button6)
+        
+            self.button6 = tb.Button(self.app, bootstyle="dark", text="Suspender",command=lambda:self.suspender())
+            self.button6.place(relx=0.9, rely=0.64, relheight=0.07, relwidth=0.1)
+            
 
             self.ppbind()
         except:
@@ -372,7 +375,7 @@ class caja():
     def password(self, event=0, status=0):
         def read(event=0):
             if cont.get()== self.Bend.datos["SuperPass"]:
-                passw.destroy()
+                self.passw.destroy()
                 self.ppbind()             
                 if status==1:
                     self.cancelar_anular(1)    
@@ -387,20 +390,25 @@ class caja():
                     self.app.bind("<F10>", lambda event: self.almacen(event=event, type=  "Bazar",status=2))
             else: 
                 error.pack(pady=20)
+        hijos = self.detalles.get_children()
         if self.Bend.subtotal==0.00 and status==0:
-            self.mostrar_error("No hay Item para Cancelar", 1)
+            self.mostrar_error("No hay Item para anular", 1)
+            return
+        if (not hijos) and status==1:
+            self.mostrar_error("No hay Tique para Cancelar", 1)
             return
         color= 'grey'
-        passw=tk.Frame(self.app)
-        passw.config(background=color)
-        passw.place(relheight=0.5,relwidth=0.5, rely=0.2, relx=0.25)
-        tb.Label(passw, text= 'Ingrese contraseña de Supervisor', background='grey',font=("arial", int(30 * self.Bend.font))).pack(pady=10)
+        self.passw=tk.Frame(self.app)
+        self.passw.config(background=color)
+        self.passw.place(relheight=0.5,relwidth=0.5, rely=0.2, relx=0.25)
+        self.ppunbind()
+        tb.Label(self.passw, text= 'Ingrese contraseña de Supervisor', background='grey',font=("arial", int(30 * self.Bend.font))).pack(pady=10)
         self.app.bind("<Return>", read)
-        cont=tb.Entry(passw, font=("arial", int(30 * self.Bend.font)) )
-        error=tb.Label(passw,text= "Contraseña Incorrecta",foreground='red', background='grey',font=("arial", int(15 * self.Bend.font)))
+        cont=tb.Entry(self.passw, justify="center",show='*',font=("arial", int(30 * self.Bend.font)) )
+        error=tb.Label(self.passw,text= "Contraseña Incorrecta",foreground='red', background='grey',font=("arial", int(15 * self.Bend.font)))
         cont.pack(pady=20)
         cont.focus_set()
-        self.app.bind("<Escape>", lambda event: (self.ppbind(event), passw.destroy()))
+        self.app.bind("<Escape>", lambda event: (self.ppbind(event), self.passw.destroy()))
     def precio(self,event):
         color= 'grey'
         self.Precio=tk.Frame(self.app)
@@ -422,8 +430,11 @@ class caja():
         self.app.bind("<F8>", lambda event: self.almacen(event=event, type="Frío/Bolsa",status=1))
         self.app.bind("<F9>", lambda event: self.almacen(event=event, type="Envase",status=1))
         self.app.bind("<F10>", lambda event: self.almacen(event=event, type="Bazar",status=1))
-    def almacen(self,type,event=0,status=0, ):
-        content = self.entrada.get()[:-1] if type == 'Almacén' else self.entrada.get()
+    def almacen(self,type,event=0,status=0, re=0 ):
+        if re:
+            content=re
+        else:
+            content = self.entrada.get()[:-1] if type == 'Almacén' else self.entrada.get()
         self.ppbind()
         if not content:
             return
@@ -505,7 +516,8 @@ class caja():
         self.entrada.focus_set()
 
     def menu(self, event=0):
-        if self.Bend.subtotal == 0:
+       
+        if not self.detalles.get_children():
             self.ppunbind()
             self.cancelar_anular(1)
             for widget in self.app.winfo_children():
@@ -574,7 +586,8 @@ class caja():
         self.R_vuelto_valor = tb.Label(self.resume, text=f'$ 0.00',
                                   font=('arial', int(30 * self.Bend.font)), background='#F1EAD7',
                                   foreground='#847C67')
-        self.R_facturacion= tb.Button(self.resume, text= 'Facturacion', style="Custom.TButton",command=lambda:self.call("tique"))
+        self.R_facturacion= tb.Button(self.resume, text= 'Facturacion', style="Custom.TButton",command=lambda:(self.resume.destroy(), 
+                                                                                                               self.ppbind(),self.call("tique", event)))
         self.R_efectivo_valor.place(relx= 0.3244, rely= 0.3945, relwidth=0.17)
         self.R_PagoElec_valor.place(relx= 0.3244, rely= 0.4557, relwidth=0.17)
         self.R_tarjeta_valor.place(relx= 0.3244, rely= 0.5182, relwidth=0.17)
@@ -595,6 +608,59 @@ class caja():
         self.R_efectivo_valor.focus()       
         self.R_suma=0
         self.resumeBind()
+    def suspender(self,event=0):
+        
+        if not self.guardado:
+            if not self.detalles.get_children():
+                self.mostrar_error("No hay Tique abierto",1)
+                return
+            self.suspendido=copy.deepcopy(self.Bend.tique)
+            self.guardado=1
+            self.cancelar_anular(status=1)
+            self.button6.config(bootstyle="Success", text="Suspendido")
+        elif self.guardado:
+            if self.detalles.get_children():
+                self.mostrar_error("Cierre Tique actual",1)
+                return
+            self.guardado=0
+            self.button6.config(bootstyle="dark", text="Suspender")
+            for items in self.suspendido:
+                intern= f"{items[3]}*{items[1]}"
+                if items[3]>0:
+                    if items[0]=="Almacén":
+                        self.almacen(re=intern, type="Almacén")
+                    elif items[0]=="Fiambrería":
+                        self.almacen(re=intern, type="Fiambrería")
+                    elif items[0]=="Verdulería":
+                        self.almacen(re=intern, type="Verdulería")
+                    elif items[0]=="Carnicería":
+                        self.almacen(re=intern, type="Carnicería")
+                    elif items[0]=="Frío/Bolsa":
+                        self.almacen(re=intern, type="Frío/Bolsa")
+                    elif items[0]=="Envase":
+                        self.almacen(re=intern, type="Envase")
+                    elif items[0]=="Bazar":
+                        self.almacen(re=intern, type="Bazar")
+                    else:
+                        self.items(Re=f"{items[3]}*{items[2]}")
+                elif items[3]<0:
+                    intern= f"{items[3]*(-1)}*{items[1]}"
+                    if items[0]=="Almacén":
+                        self.almacen(re=intern, status=2,type="Almacén")
+                    elif items[0]=="Fiambrería":
+                        self.almacen(re=intern, status=2,type="Fiambrería")
+                    elif items[0]=="Verdulería":
+                        self.almacen(re=intern, status=2,type="Verdulería")
+                    elif items[0]=="Carnicería":
+                        self.almacen(re=intern, status=2,type="Carnicería")
+                    elif items[0]=="Frío/Bolsa":
+                        self.almacen(re=intern, status=2,type="Frío/Bolsa")
+                    elif items[0]=="Envase":
+                        self.almacen(re=intern,status=2, type="Envase")
+                    elif items[0]=="Bazar":
+                        self.almacen(status=2,re=intern, type="Bazar")
+                    else:
+                        self.items(status=2,Re=f"{items[3]*(-1)}*{items[2]}")
 
     def sim(self,status, event=0):  
             if status ==1:
@@ -647,13 +713,14 @@ class caja():
                                   foreground='#847C67').place(relx=0.54, rely=0.35)
         self.R_efectivo_valor.bind("<Return>", lambda event : self.enter_as_tab(event))
         self.R_PagoElec_valor.bind("<Return>", lambda event : self.enter_as_tab(event))
-        self.R_tarjeta_valor.bind("<Return>", lambda event: (self.resume.focus_force(), self.call("tique",event=event)))
+        self.R_tarjeta_valor.bind("<Return>", lambda event: (self.resume.focus_force(), self.resume.destroy(), 
+                                                             self.ppbind(),self.call("tique", event)))
         self.R_efectivo_valor.bind("<FocusOut>", lambda event: self.sim(1, event))
         self.R_PagoElec_valor.bind("<FocusOut>", lambda event: self.sim(2, event))
         self.R_tarjeta_valor.bind("<FocusOut>", lambda event: self.sim(3, event))
         self.R_recargo_valor.bind("<FocusOut>", lambda event: bon(event))
         self.R_bonificacion_valor.bind("<FocusOut>", lambda event: bon(event))
-        self.app.bind("<F4>", lambda event: self.call("tique", event))
+        self.app.bind("<F4>", lambda event: (self.resume.destroy(), self.ppbind(),self.call("tique", event)))
         self.app.bind("<Escape>", lambda event: (self.resume.destroy(), self.ppbind()))
     def call(self, command,extra=0, extra1=0, event=0):
         result= self.Bend.main(f"{command}", extra, extra1) if extra1 else self.Bend.main(f"{command}")
@@ -718,6 +785,7 @@ class caja():
             print(totalC)
             if (not res_ordenado) or totalC< mult:
                 self.mostrar_error("Producto NO Facturado",1)
+                self.entrada.delete(0,tk.END)
             else:
                 subC=0
                 eliminacion=[]
@@ -759,7 +827,11 @@ class caja():
             return '\n'.join(textwrap.wrap(cadena, width=30))
         message= dividir_cadena(f"{error}")
         error_window = tb.Toplevel(self.app)
-
+        try:
+            self.passw.destroy()
+        except:
+            pass
+            
         error_window.title("Error")
         error_window.geometry("600x400")
         error_window.resizable(False, False)  

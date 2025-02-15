@@ -542,5 +542,6 @@ class main():
             font.insert(0, self.Back.datos['Font'])
         tb.Button(cfg, style= "darkly", text="Guardar", command=save).pack(pady=10)
         tb.Button(cfg, text="Menu", style= "darkly", command=cfg.destroy).pack(pady=10)
+   
 main()
         

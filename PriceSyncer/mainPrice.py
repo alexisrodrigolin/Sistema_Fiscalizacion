@@ -3,6 +3,15 @@ import ttkbootstrap as tb
 import priceB 
 import textwrap
 from tkinter import messagebox
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.units import cm
+from reportlab.lib.utils import simpleSplit
+import barcode
+from barcode.ean import EuropeanArticleNumber13
+from barcode.writer import ImageWriter
+import os
+
 
 class main():
     def __init__(self):
@@ -93,7 +102,7 @@ class main():
             self.P_precioC2_value= tb.Entry(self.app, style= "darkly", font= ("Arial",  int(15 * self.Back.font)), width=7)
             self.P_precioC3= tb.Label(self.app, text= "Precio x Uni:", font= ("Arial",  int(15 * self.Back.font)))
             self.P_precioC3_value= tb.Entry(self.app, style= "darkly", font= ("Arial",int(15 * self.Back.font)), width=7)
-            self.P_guardar= tb.Button(self.app, text="Guardar y emitir", bootstyle="warning-outline")
+            self.P_guardar= tb.Button(self.app, text="Guardar y emitir", bootstyle="warning-outline",command= lambda:self.save(status=1))
             self.P_guardarSin= tb.Button(self.app, text="Guadar sin emitir", bootstyle="warning-outline",command=self.save)
             self.P_borrar= tb.Button(self.app, text="Borrar", bootstyle="warning-outline")
             self.P_menu= tb.Button(self.app, text="Menu", bootstyle="warning-outline", command= self.menu)
@@ -245,7 +254,7 @@ class main():
             command= getattr(self, f'P_{x}_value')
             command.delete(0, tb.END)
 
-    def save(self):
+    def save(self,status=0):
         command= []
         precio= self.P_precio_value.get()
         dic={'Precio':f'{precio[2:]}'}
@@ -259,7 +268,8 @@ class main():
                 dic.update({f'{self.colsql[x]}':f'{command[x][2:]}'})  
             elif command[x]=='':
                 dic.update({f'{self.colsql[x]}':'NULL'})
-        self.Back.guardar(dic, self.P_id_value.get())
+        
+        self.Back.guardar(dic, self.P_id_value.get(),status=status)
 
         self.clean()
 
@@ -365,7 +375,7 @@ class main():
             self.precio= tb.Button(self.app,
             text="Precio", style= "darkly",command=self.create_widget_precio)
             self.etiquetas= tb.Button(self.app,
-            text = "etiquetas", style= "darkly")
+            text = "etiquetas", style= "darkly", command=self.etiFrame)
         
             self.etiquetas.grid(column=7, row=11, )
             self.precio.grid(column=7,row=10, )
@@ -542,6 +552,285 @@ class main():
             font.insert(0, self.Back.datos['Font'])
         tb.Button(cfg, style= "darkly", text="Guardar", command=save).pack(pady=10)
         tb.Button(cfg, text="Menu", style= "darkly", command=cfg.destroy).pack(pady=10)
-   
+    def etiFrame(self,event=0):
+        def cargar(status=1):
+            datos_productos=[]
+            for res in self.Back.etiquetasSearch(instruc=status):
+                net=""
+                for w in (4,5,6,7,8):
+                    if res[w]: net+=f"{res[w]} "
+                # Plu, precio, descr, pasillo, precio1, precio2, precio3, fecha de mod, cant1,cant2,cant3
+                values=(res[1], res[3], f"{net}", res[9], res[14], res[16], res[18],res[19], "",res[13],res[15],res[17]) 
+                datos_productos.append(values)
+                
+            datos_productos.sort(key= lambda x: (x[3] is None,x[3]))
+            cargar_filas_desde_tuplas(datos_productos)
+        control=tk.StringVar(value="EtiR")
+        def changeControl(status):
+            if status==1:
+                Rap.config(bootstyle="Success")
+                Of1.config(bootstyle="dark")
+                Of2.config(bootstyle="dark")
+                Of4.config(bootstyle="dark")
+            elif status==2:
+                Rap.config(bootstyle="dark")
+                Of1.config(bootstyle="Dark")
+                Of2.config(bootstyle="Dark")
+                Of4.config(bootstyle="Success")
+            elif status==3:
+                Rap.config(bootstyle="Dark")
+                Of1.config(bootstyle="Dark")
+                Of2.config(bootstyle="Success")
+                Of4.config(bootstyle="Dark")
+            elif status==4:
+                Rap.config(bootstyle="dark")
+                Of1.config(bootstyle="Success")
+                Of2.config(bootstyle="Dark")
+                Of4.config(bootstyle="Dark")
+        eti=tk.Frame(self.app,)
+        eti.place(relheight=1,relwidth=1,   relx=0,rely=0)
+        Rap=tb.Button(eti, style="Success",text="Etiqueta Rapida", command=lambda: changeControl(1))
+        Of4=tb.Button(eti, style="dark",text="Oferta 4x1", command=lambda: changeControl(2))
+        Of2=tb.Button(eti, style="dark",text="Oferta 2x1", command=lambda: changeControl(3))
+        Of1=tb.Button(eti, style="dark",text="Oferta 1x1", command=lambda: changeControl(4))
+        Etientrada= tb.Entry(eti, style="dark",width=10)
+        Etientrada.place(relheight=0.05,relwidth=0.4,relx=0.3,rely=0.9)
+        Rap.place(relx=0., rely=0.2,relheight=0.05,relwidth=0.09)
+        Of4.place(relx=0., rely=0.27,relheight=0.05,relwidth=0.09)
+        Of2.place(relx=0., rely=0.34,relheight=0.05,relwidth=0.09)
+        Of1.place(relx=0, rely=0.41,relheight=0.05,relwidth=0.09)
+        tb.Button(eti, style="dark",text="Buscar").place(relheight=0.05,relwidth=0.07,relx=0.8, rely=0.9)
+        main_frame = tk.Frame(eti)
+        main_frame.place(relx=0.1,relheight=0.65,relwidth=0.85,rely=0.1)
+
+        # Canvas para permitir desplazamiento
+        canvas = tk.Canvas(main_frame)
+        scrollbar = tb.Scrollbar(main_frame, orient="vertical", command=canvas.yview)
+
+        # Frame interno dentro del canvas
+        scrollable_frame = tb.Frame(canvas)
+        scrollable_frame.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
+        canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+        canvas.configure(yscrollcommand=scrollbar.set)
+
+        # Frame para organizar Checkbuttons y Treeview
+        content_frame = tb.Frame(scrollable_frame)
+        content_frame.pack(fill="both", expand=True)
+
+        # Frame para Checkbuttons (lado izquierdo)
+        check_frame = tb.Frame(content_frame)
+        check_frame.grid(row=0, column=0, sticky="nw", padx=5)
+
+        # Treeview (lado derecho)
+        tree =tb.Treeview(content_frame, columns=("data","Precion","Precio1","Precio2","Precio3"), show="tree", height=0)
+  
+        tree.column("data", width=400, anchor="w")
+        tree.column("Precion", width=80, anchor="center")
+        tree.column("Precio1", width=80, anchor="center")
+        tree.column("Precio2", width=80, anchor="center")
+        tree.column("Precio3", width=80, anchor="center")
+        tree.grid(row=0, column=1, columnspan=5, sticky="nwe", padx=1)
+
+        # Diccionario para almacenar Checkbuttons vinculados con filas del Treeview
+        check_dict = {}
+
+        # Función para actualizar selección en el Treeview
+        def actualizar_treeview():
+            for item_id, vars_list in check_dict.items():
+                if any(var.get() for var in vars_list):  # Si al menos un Checkbutton está activado
+                    tree.item(item_id, tags=("seleccionado",))
+                else:
+                    tree.item(item_id, tags=())
+
+        # Configurar color de filas seleccionadas
+        tree.tag_configure("seleccionado", background="lightblue")
+
+        # Función para agregar filas dinámicamente
+        # def agregar_fila():
+        #     fila_id = len(check_dict)  # Número de fila actual
+
+        #     # Insertar fila en Treeview y guardar su ID
+        #     item_id = tree.insert("", "end", values=(f"Dato fila {fila_id+1}",))
+        #     tree["height"] = fila_id + 1  # Ajustar la altura del Treeview
+
+        #     # Crear un Frame para la nueva fila de Checkbuttons y ubicarlo en una fila nueva
+        #     row_frame = tb.Frame(check_frame)
+        #     row_frame.grid(row=fila_id, column=0, sticky="w")  # Cada grupo de Checkbuttons en una fila nueva
+
+        #     # Crear 4 Checkbuttons dentro de la fila
+        #     row_vars = []
+        #     for j in range(4):
+        #         var = tk.BooleanVar()
+        #         row_vars.append(var)
+        #         chk = tb.Checkbutton(row_frame, text=f"Opción {j+1}", variable=var, command=actualizar_treeview)
+        #         chk.pack(side="left", padx=5)
+
+        #     # Asociar Checkbuttons con la fila en el Treeview
+        #     check_dict[item_id] = row_vars
+
+        #     # Actualizar scrollbar
+        #     canvas.update_idletasks()
+        #     canvas.configure(scrollregion=canvas.bbox("all"))
+
+        # # Botón para agregar filas dinámicamente
+        # btn_agregar = tb.Button(eti, text="Agregar Fila", command=agregar_fila)
+        # btn_agregar.place(relheight=0.05,relwidth=0.05,relx=0.8,rely=0.8)
+        
+      
+    # Función modificada para cargar desde tuplas
+        def cargar_filas_desde_tuplas(datos):
+            for producto in datos:
+                precio= f"$ {producto[1]}" if not producto[1] is None else "$"
+                precio1= f"$ {producto[4]}" if not producto[4] is None else "$"
+                precio2= f"$ {producto[5]}" if not producto[5] is None else "$"
+                precio3= f"$ {producto[6]}" if not producto[6] is None else "$"
+                descripcion = producto[2]
+                opciones = producto[8:]
+                
+                # Insertar fila en Treeview
+                item_id = tree.insert("", "end", values=(descripcion,precio,precio1,precio2,precio3))
+                
+                # Crear Frame para checkboxes
+                row_frame = tb.Frame(check_frame)
+                row_frame.grid(row=len(check_dict), column=0, sticky="w")
+                
+                # Variables y checkboxes
+                row_vars = []
+                for i, texto_opcion in enumerate(opciones):
+                    var = tk.BooleanVar()
+                    row_vars.append(var)
+                    chk = tb.Checkbutton(
+                        row_frame, 
+                        text=texto_opcion,
+                        variable=var,
+                        command=actualizar_treeview
+                    )
+                    chk.pack(side="left", padx=5)
+                
+                check_dict[item_id] = row_vars
+            
+            # Actualizar scroll y altura del treeview
+            tree["height"] = len(datos)
+            canvas.update_idletasks()
+            canvas.configure(scrollregion=canvas.bbox("all"))
+
+        # Cargar los datos al iniciar
+        
+        # Empaquetar el canvas y el scrollbar
+        canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+        cargar(2)
+    def eti(self):
+        PAGE_WIDTH, PAGE_HEIGHT = A4
+        LABEL_WIDTH = 5.8 * cm
+        LABEL_HEIGHT = 2.8 * cm
+        MARGIN_LEFT = (PAGE_WIDTH - (3 * LABEL_WIDTH)) / 2
+        ROWS_PER_PAGE = 10
+
+        # Estilo del texto
+        NOMBRE_FUENTE = "Helvetica"
+        TAMANO_PRECIO = 20  # Reducido para mejor ajuste
+        TAMANO_TEXTO = 12
+        TAMANO_CODIGO = 6
+        ESPACIADO = 0.1 * cm
+
+        # Zonas verticales de la etiqueta (en cm desde el borde superior)
+        ZONA_NOMBRE = 0.4* cm
+        ZONA_PRECIO = 1.55 * cm
+        ZONA_CODIGO = 3.0 * cm
+
+        productos = [
+            {"nombre": "1234567890123456789456", "precio": "$5999.99", "codigo": "7791274087615"},
+            {"nombre": "1234567890123456789456", "precio": "$5999.99", "codigo": "7791274087615"},
+            {"nombre": "1234567890123456789456", "precio": "$5999.99", "codigo": "7791274087615"},
+            {"nombre": "1234567890123456789456", "precio": "$5999.99", "codigo": "7791274087615"},
+            {"nombre": "1234567890123456789456", "precio": "$5999.99", "codigo": "7791274087615"},
+            {"nombre": "1234567890123456789456", "precio": "$5999.99", "codigo": "7791274087615"},
+            {"nombre": "1234567890123456789456", "precio": "$59999.99", "codigo": "7791274087615"},
+        ]
+        def generar_codigo_barras(codigo):
+                # Obtener clase EAN-13
+                ean = barcode.get_barcode_class("ean13")
+
+                # Verificar si el último dígito es correcto
+                ean_temp = ean(codigo[:-1])  # Usamos solo los primeros 12 dígitos
+                codigo_generado = ean_temp.get_fullcode()  # Obtiene los 13 dígitos con checksum
+
+                if codigo_generado != codigo:
+                    print(f"⚠️ El código {codigo} no es válido. El checksum correcto sería: {codigo_generado}")
+                else:
+                    # Generar el código de barras solo si es válido
+                    ean13 = ean(codigo[:-1], writer=ImageWriter())
+                    # filename = ean13.save("codigo_ean13")
+                    # print(f"✅ Código de barras generado: {filename}.png")
+                    nombre_archivo = f"temp_{codigo}"
+                    ean13.save(nombre_archivo, options={"write_text": False})
+                    return f"{nombre_archivo}.png"
+        def crear_etiquetas():
+            c = canvas.Canvas("etiquetas_precios.pdf", pagesize=A4)
+            
+            for i, producto in enumerate(productos):
+                if i % (ROWS_PER_PAGE * 3) == 0 and i != 0:
+                    c.showPage()
+                
+                columna = i % 3
+                fila = (i // 3) % ROWS_PER_PAGE
+                
+                x = MARGIN_LEFT + (columna * LABEL_WIDTH)
+                y = PAGE_HEIGHT - LABEL_HEIGHT - (fila * LABEL_HEIGHT)-1*cm
+                
+                # Dibujar borde
+                c.rect(x, y, LABEL_WIDTH, LABEL_HEIGHT)
+                
+                # Nombre del producto (parte superior)
+                c.setFont(NOMBRE_FUENTE, TAMANO_TEXTO)
+                nombre = simpleSplit(producto["nombre"], NOMBRE_FUENTE, TAMANO_TEXTO, LABEL_WIDTH - 2*ESPACIADO)
+                text_y = y + LABEL_HEIGHT - ZONA_NOMBRE
+                for line in nombre:
+                    c.drawString(x + ESPACIADO, text_y, line)
+                    text_y -= TAMANO_TEXTO * 1.2
+        # Precio (centro destacado)
+                c.setFont(NOMBRE_FUENTE , 8)
+                c.drawCentredString(
+                    x + LABEL_WIDTH-0.7*cm,
+                    y +ESPACIADO ,
+                    "22/05/24"
+                )
+                c.setFont(NOMBRE_FUENTE, 8)
+                c.drawCentredString(
+                    x + LABEL_WIDTH/2+0.2*cm,
+                    y +ESPACIADO ,
+                    "$49888.98 xLt"
+                )
+                # Precio (centro destacado)
+                c.setFont(NOMBRE_FUENTE + "-Bold", TAMANO_PRECIO)
+                c.drawCentredString(
+                    x + LABEL_WIDTH/2,
+                    y + LABEL_HEIGHT - ZONA_PRECIO,
+                    producto["precio"]
+                )
+
+                # Código de barras (parte inferior)
+                codigo_img = generar_codigo_barras(producto["codigo"])
+                c.drawImage(codigo_img, 
+                        x +ESPACIADO-0.05*cm, 
+                        y + ESPACIADO+0.25*cm, 
+                        width=3.0*cm,  # Ancho reducido
+                        height=0.6*cm,  # Altura reducida
+                        )
+                
+                # Texto del código
+                c.setFont(NOMBRE_FUENTE, TAMANO_CODIGO)
+                c.drawCentredString(
+                    x +ESPACIADO+ 0.85*cm,
+                    y + ESPACIADO ,
+                    producto["codigo"]
+                )
+                
+                os.remove(codigo_img)
+            
+            c.save()
+            print("PDF generado correctamente")
+        crear_etiquetas()
 main()
         

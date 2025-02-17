@@ -18,7 +18,9 @@ class connection():
         self.cursor= self.mydb.cursor()   
         self.valid_users = {
             "1": "1",  }
-  
+        self.etiR=[]
+        self.etiO=[]
+        self.bridge="PLU, PLU2, Precio, Marca, Descripcion, Tipo_Sabor, Cantidad, Unidad,Pasillo,Costo,IVA,Ganancia, Cant1, Precio1, Cant2, Precio2, Cant3, Precio3, Fecha_de_Modificacion"
     def search(self, codigo):
         instructionId= f"SELECT * FROM Art WHERE ID={codigo}"
         instructionPlu= f"SELECT * FROM Art WHERE PLU= {codigo}"
@@ -40,7 +42,7 @@ class connection():
             self.cursor.execute(instruction)
             self.mydb.commit()
 
-    def guardar(self, dic,id):
+    def guardar(self, dic,id, status=0):
         net=''
         for clave, valor in dic.items():
             if valor =='NULL':
@@ -50,6 +52,18 @@ class connection():
         instruction = f'UPDATE Art SET {net[:-2]} WHERE id = {id}'
         self.cursor.execute(instruction)
         self.mydb.commit()
+        if status==1:
+            instructionEti=f"REPLACE INTO etiq({self.bridge}) Select {self.bridge} From Art Where id={id}"
+            instructionSEti=f"REPLACE INTO Setiq({self.bridge}) Select {self.bridge} From Art Where id={id}"
+            self.cursor.execute(f"SELECT Cant1, Cant2, Cant3 FROM Art WHERE id={id}")
+            result=self.cursor.fetchall()
+            if (not result) or all(r[0] is None for r in result):
+                self.cursor.execute(instructionEti)
+                self.mydb.commit()
+            else: 
+                self.cursor.execute(instructionSEti)
+                self.mydb.commit()
+
     def validate_user(self, username, password):
         return self.valid_users.get(username) == password
 
@@ -91,7 +105,26 @@ class connection():
         except Error as e:
             # messagebox.showerror("Error", f"Error de búsqueda: {e}")
             return []
-        # finally:
-        #     if conexion.is_connected():
-        #         cursor.close()
-        #         conexion.close()
+    
+    def etiquetasSearch(self,instruc):
+        instruction="Select * From etiq LIMIT 1000"
+        instruction1= "Select * From Setiq LIMIT 1000"
+        borrar_Instruction="TRUNCATE TABLE etiq"
+        borrar1_Instruction="TRUNCATE TABLE etiq1"
+        if instruc==1:
+            self.cursor.execute(instruction)
+            result= self.cursor.fetchall()
+            return result
+        elif instruc==2:
+            self.cursor.execute(instruction1)
+            result= self.cursor.fetchall()
+            return result
+        elif instruc==3:
+            self.cursor.execute(borrar_Instruction)
+            self.mydb.commit()
+            return
+        elif instruc==4:
+            self.cursor.execute(borrar1_Instruction)
+            self.mydb.commit()
+            return
+        

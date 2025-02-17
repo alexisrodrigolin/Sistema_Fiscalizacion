@@ -314,7 +314,7 @@ class caja():
                 variables = [(result[6], result[7]), ( result[8], result[9]), (result[10], result[11])]
                 ordenadas = sorted(variables, key=lambda x: (x[0] is not None, x[0] if x[0] is not None else float('-inf')), reverse=True)
            
-                if ordenadas[0][0] <= mult and ordenadas[0][0] is not None:
+                if ordenadas[0][0] is not None and ordenadas[0][0] <= mult:
                     of=ordenadas[0][0]
                     enteros= math.floor(mult/ordenadas[0][0])
                     cantOf=(enteros*ordenadas[0][0])

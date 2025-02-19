@@ -1,83 +1,125 @@
-import tkinter as tk
-import ttkbootstrap as tb
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import A4, landscape
+from reportlab.lib.units import cm
+from reportlab.graphics.barcode import code128
+from reportlab.lib.colors import black, red
+from reportlab.platypus import Paragraph
+from reportlab.lib.styles import ParagraphStyle
+import os
+import subprocess
 
-root = tb.Window(themename="darkly")
+def generar_etiquetas(productos, disposicion, nombre_archivo="ofertas.pdf"):
+    # Configurar disposición y orientación
+    if disposicion == "1x1" or disposicion == "4x1":
+        ancho, alto = landscape(A4)  # Apaisado
+    else:
+        ancho, alto = A4  # Vertical
 
-# Frame principal
-main_frame = tb.Frame(root)
-main_frame.pack(fill="both", expand=True, padx=10, pady=10)
+    margen = 1 * cm
+    estilos = {
+        'titulo': ParagraphStyle(name='Titulo', fontSize=20, textColor=black, leading=10),
+        'precio': ParagraphStyle(name='Precio', fontSize=20, textColor=black, leading=22),
+        'normal': ParagraphStyle(name='Normal', fontSize=10, textColor=black, leading=12)
+    }
 
-# Canvas para permitir desplazamiento
-canvas = tk.Canvas(main_frame)
-scrollbar = tb.Scrollbar(main_frame, orient="vertical", command=canvas.yview)
+    # Configurar disposición
+    if disposicion == "1x1":
+        columnas, filas = 1, 1
+    elif disposicion == "2x1":
+        columnas, filas = 1, 2  # Una columna, dos filas (una debajo de la otra)
+    elif disposicion == "4x1":
+        columnas, filas = 2, 2  # Dos columnas, dos filas (apaisado)
+    else:
+        raise ValueError("Disposición no válida: usar 1x1, 2x1 o 4x1")
 
-# Frame interno dentro del canvas
-scrollable_frame = tb.Frame(canvas)
-scrollable_frame.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
-canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
-canvas.configure(yscrollcommand=scrollbar.set)
+    ancho_etiqueta = (ancho - 2 * margen) / columnas
+    alto_etiqueta = (alto - 2 * margen) / filas
 
-# Frame para organizar Checkbuttons y Treeview
-content_frame = tb.Frame(scrollable_frame)
-content_frame.pack(fill="both", expand=True)
+    c = canvas.Canvas(nombre_archivo, pagesize=(ancho, alto))
 
-# Frame para Checkbuttons (lado izquierdo)
-check_frame = tb.Frame(content_frame)
-check_frame.grid(row=0, column=0, sticky="nw", padx=5)
+    for i, producto in enumerate(productos):
+        col = i % columnas
+        fila = (i // columnas) % filas
 
-# Treeview (lado derecho)
-tree =tb.Treeview(content_frame, columns=("data",), show="tree", height=0)
-tree.heading("data", text="Datos")
-tree.column("data", width=150, anchor="center")
-tree.grid(row=0, column=1, sticky="nw", padx=5)
+        if i % (columnas * filas) == 0 and i != 0:
+            c.showPage()
 
-# Diccionario para almacenar Checkbuttons vinculados con filas del Treeview
-check_dict = {}
+        x = margen + col * ancho_etiqueta
+        y = alto - margen - (fila + 1) * alto_etiqueta
 
-# Función para actualizar selección en el Treeview
-def actualizar_treeview():
-    for item_id, vars_list in check_dict.items():
-        if any(var.get() for var in vars_list):  # Si al menos un Checkbutton está activado
-            tree.item(item_id, tags=("seleccionado",))
-        else:
-            tree.item(item_id, tags=())
+        # Marco de la etiqueta
+        c.rect(x, y, ancho_etiqueta, alto_etiqueta)
 
-# Configurar color de filas seleccionadas
-tree.tag_configure("seleccionado", background="lightblue")
+        # Contenido
+        elementos = [
+            (Paragraph(f"<b>~Oferta~</b> ", estilos['titulo']), 0.5 * cm),
+            (Paragraph(producto['descripcion'], estilos['precio']), 1 * cm),
+            (Paragraph(f"<b>Ahora:</b> $ {producto['precio']} ", estilos['precio']), 2 * cm),
+            (Paragraph(f"<b>Antes:</b> <strike>$ {producto['precio_anterior']} </strike>", estilos['normal']), 2.5 * cm),
+            (Paragraph(f"Precio por litro: $ {producto['precio_litro']} /L", estilos['normal']), 10 * cm),
+        ]
 
-# Función para agregar filas dinámicamente
-def agregar_fila():
-    fila_id = len(check_dict)  # Número de fila actual
+        current_y = y + alto_etiqueta - 0.5 * cm
+        for elemento, espacio in elementos:
+            elemento.wrapOn(c, ancho_etiqueta - 1 * cm, alto_etiqueta)
+            elemento.drawOn(c, x + 0.5 * cm, current_y - elemento.height)
+            current_y -= espacio + elemento.height
 
-    # Insertar fila en Treeview y guardar su ID
-    item_id = tree.insert("", "end", values=(f"Dato fila {fila_id+1}",))
-    tree["height"] = fila_id + 1  # Ajustar la altura del Treeview
+        # Código de barras
 
-    # Crear un Frame para la nueva fila de Checkbuttons y ubicarlo en una fila nueva
-    row_frame = tb.Frame(check_frame)
-    row_frame.grid(row=fila_id, column=0, sticky="w")  # Cada grupo de Checkbuttons en una fila nueva
 
-    # Crear 4 Checkbuttons dentro de la fila
-    row_vars = []
-    for j in range(4):
-        var = tk.BooleanVar()
-        row_vars.append(var)
-        chk = tb.Checkbutton(row_frame, text=f"Opción {j+1}", variable=var, command=actualizar_treeview)
-        chk.pack(side="left", padx=5)
+    c.save()
 
-    # Asociar Checkbuttons con la fila en el Treeview
-    check_dict[item_id] = row_vars
 
-    # Actualizar scrollbar
-    canvas.update_idletasks()
-    canvas.configure(scrollregion=canvas.bbox("all"))
+# Ejemplo de uso
+productos = [
+    {
+        'titulo': '',
+        'descripcion': 'Extra virgen 1L botella vidrio',
+        'precio': '6.99',
+        'precio_anterior': '8.99',
+        'precio_litro': '6.99',
+        'codigo_barras': '123456789012'
+    },
+    {
+        'titulo': '',
+        'descripcion': 'Leche Entera Pack Pack de 6 botellas de 1L',
+        'precio': '4.50',
+        'precio_anterior': '5.99',
+        'precio_litro': '0.75',
+        'codigo_barras': '987654321098'
+    },
+    {
+        'titulo': 'Leche Entera',
+        'descripcion': 'Pack de 6 botellas de 1L',
+        'precio': '4.50',
+        'precio_anterior': '5.99',
+        'precio_litro': '0.75',
+        'codigo_barras': '987654321098'
+    },
+    {
+        'titulo': 'Leche Entera',
+        'descripcion': 'Pack de 6 botellas de 1L',
+        'precio': '4.50',
+        'precio_anterior': '5.99',
+        'precio_litro': '0.75',
+        'codigo_barras': '987654321098'
+    },
+    # Agrega más productos según necesites
+]
 
-# Botón para agregar filas dinámicamente
-btn_agregar = tb.Button(root, text="Agregar Fila", command=agregar_fila)
-btn_agregar.pack(pady=5)
+# disposicion = input("Elige disposición (1x1, 2x1, 4x1): ").strip().lower()
+disposicion= "4x1"
+generar_etiquetas(productos, disposicion)
+print("PDF generado correctamente!") 
+def abrir_pdf(ruta_archivo):
+    # Para Windows
+            if os.name == 'nt':
+                os.startfile(ruta_archivo)
+            # Para Linux o macOS
+            else:
+                opener = 'open' if sys.platform == 'darwin' else 'xdg-open'
+                subprocess.run([opener, ruta_archivo])
 
-# Empaquetar el canvas y el scrollbar
-canvas.pack(side="left", fill="both", expand=True)
-scrollbar.pack(side="right", fill="y")
-
-root.mainloop()
+        # Ejemplo de uso
+abrir_pdf("ofertas.pdf")

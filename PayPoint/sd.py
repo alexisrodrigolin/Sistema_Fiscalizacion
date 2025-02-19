@@ -1,65 +1,194 @@
-import tkinter as tk
-import ttkbootstrap as ttk
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import A4, landscape
+from reportlab.lib.units import cm
+from reportlab.graphics.barcode import code128
+from reportlab.lib.colors import black, red
+from reportlab.platypus import Paragraph
+from reportlab.lib.styles import ParagraphStyle
 
-root = ttk.Window(themename="darkly")
+from reportlab.lib.enums import TA_CENTER, TA_RIGHT
+import os
+import subprocess
 
-# Frame principal
-main_frame = ttk.Frame(root)
-main_frame.pack(fill="both", expand=True, padx=10, pady=10)
+def generar_etiquetas(productos, disposicion, nombre_archivo="ofertas.pdf"):
+    # Configurar disposición y orientación
+    if disposicion == "1x1" or disposicion == "4x1":
+        ancho, alto = landscape(A4)  # Apaisado
+    else:
+        ancho, alto = A4  # Vertical
+    tamanio_fuente = {
+        '1x1': {'titulo': 40, 'precio': 30, 'normal': 15},
+        '2x1': {'titulo': 36, 'precio': 28, 'normal': 14},
+        '4x1': {'titulo': 26, 'precio': 22, 'normal': 12}
+    }[disposicion]
+    margen = 1 * cm                                     
+    estilos = {
+        'titulo': ParagraphStyle(
+            name='Titulo', 
+            fontSize=tamanio_fuente["titulo"], 
+            textColor=black, 
+            leading=24,  # Aumentar leading para evitar solapamiento
+            alignment=TA_CENTER  # Alineación centrada
+        ),
+        'precio': ParagraphStyle(
+            name='Precio',
+            fontSize=tamanio_fuente["precio"],
+            textColor=black,
+            leading=22,
+            alignment=TA_CENTER  # Alineación centrada
+        ),
+        'normal': ParagraphStyle(
+            name='Normal',
+            fontSize=tamanio_fuente['normal'],
+            textColor=black,
+            leading=12,
+            alignment=TA_CENTER  # Alineación centrada
+        ),
+        'other': ParagraphStyle(
+            name='other',
+            fontSize=tamanio_fuente['normal'],
+            textColor=black,
+            leading=12,
+              # Alineación centrada
+        ),
+        'other1': ParagraphStyle(
+            name='other1',
+            fontSize=tamanio_fuente['normal'],
+            textColor=black,
+            leading=12,
+            alignment=TA_RIGHT
+              # Alineación centrada
+        )
+    }
 
-# Canvas para el scrollbar
-canvas = tk.Canvas(main_frame)
-scrollbar = ttk.Scrollbar(main_frame, orient="vertical", command=canvas.yview)
+    # Configurar disposición
+    if disposicion == "1x1":
+        columnas, filas = 1, 1
+    elif disposicion == "2x1":
+        columnas, filas = 1, 2  # Una columna, dos filas (una debajo de la otra)
+    elif disposicion == "4x1":
+        columnas, filas = 2, 2  # Dos columnas, dos filas (apaisado)
+    else:
+        raise ValueError("Disposición no válida: usar 1x1, 2x1 o 4x1")
 
-# Frame interno dentro del canvas
-scrollable_frame = ttk.Frame(canvas)
+    ancho_etiqueta = (ancho - 2 * margen) / columnas
+    alto_etiqueta = (alto - 2 * margen) / filas
 
-# Configurar el frame interno dentro del canvas
-scrollable_frame.bind(
-    "<Configure>",
-    lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
-)
+    c = canvas.Canvas(nombre_archivo, pagesize=(ancho, alto))
 
-# Crear un window dentro del canvas
-canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
-canvas.configure(yscrollcommand=scrollbar.set)
+    for i, producto in enumerate(productos):
+        col = i % columnas
+        fila = (i // columnas) % filas
 
-# Frame para organizar Checkbuttons y Treeview
-content_frame = ttk.Frame(scrollable_frame)
-content_frame.pack(fill="both", expand=True)
+        if i % (columnas * filas) == 0 and i != 0:
+            c.showPage()
 
-# Frame para Checkbuttons (lado izquierdo)
-check_frame = ttk.Frame(content_frame)
-check_frame.pack(side="left", fill="y", padx=5)
+        x = margen + col * ancho_etiqueta
+        y = alto - margen - (fila + 1) * alto_etiqueta
 
-# Crear Checkbuttons en filas de 4 columnas
-check_vars = []  # Lista para almacenar variables de Checkbuttons
-num_filas = 5  # 5 filas de Checkbuttons (total 5x4 = 20 opciones)
-num_columnas = 4  # 4 Checkbuttons por fila
+        # Marco de la etiqueta
+        c.rect(x, y, ancho_etiqueta, alto_etiqueta)
 
-for i in range(num_filas):
-    row_frame = ttk.Frame(check_frame)
-    row_frame.pack(fill="x", pady=2)
-    row_vars = []
-    for j in range(num_columnas):
-        var = tk.BooleanVar()
-        row_vars.append(var)
-        chk = ttk.Checkbutton(row_frame, text=f"Opción {i*num_columnas + j + 1}", variable=var)
-        chk.pack(side="left", padx=5)
-    check_vars.append(row_vars)
+        # Contenido
+        elementos = [
+            (Paragraph(f"<b>~Oferta~</b>", estilos['titulo']), 0.5 * cm),
+            (Paragraph(producto['descripcion'], estilos['precio']), 1 * cm),
+            (Paragraph(f"<b>Ahora:</b> $ {producto['precio']}", estilos['precio']), 1 * cm),
+            (Paragraph(f"<b>Antes:</b> <strike>$ {producto['precio_anterior']}</strike>", estilos['normal']), 1 * cm),
+            (Paragraph(f"Precio por litro: $ {producto['precio_litro']}/L", estilos['other']), 1 * cm),
+            (Paragraph(f" {producto['codigo_barras']}", estilos['other1']), 1 * cm),
+        ]
 
-# Treeview (lado derecho)
-tree = ttk.Treeview(content_frame, columns=("data",), show="headings", height=num_filas)
-tree.heading("data", text="Datos")
-tree.column("data", width=150, anchor="center")
-tree.pack(side="left", padx=5, fill="y")
+        current_y = y + alto_etiqueta - 0.5 * cm
+        oferta = Paragraph(f"<b>~Oferta~</b>", estilos['titulo'])
+        oferta.wrapOn(c, ancho_etiqueta - 1 * cm, alto_etiqueta)
+        x_pos = x + (ancho_etiqueta - oferta.width) / 2  # Centrado horizontal
+        oferta.drawOn(c, x_pos, y + alto_etiqueta - 1 * cm - oferta.height)
 
-# Insertar filas en el Treeview (una por cada fila de Checkbuttons)
-for i in range(num_filas):
-    tree.insert("", "end", values=(f"Dato fila {i+1}",))
+        # 2. Descripción del producto
+        descripcion = Paragraph(producto['descripcion'], estilos['precio'])
+        descripcion.wrapOn(c, ancho_etiqueta - 1 * cm, alto_etiqueta)
+        x_pos = x + (ancho_etiqueta - descripcion.width) / 2
+        descripcion.drawOn(c, x_pos, y + alto_etiqueta - 3 * cm - descripcion.height)
 
-# Empaquetar el canvas y el scrollbar
-canvas.pack(side="left", fill="both", expand=True)
-scrollbar.pack(side="right", fill="y")
+        # 3. Precio actual
+        precio_actual = Paragraph(f"<b>Ahora:</b> $ {producto['precio']}", estilos['precio'])
+        precio_actual.wrapOn(c, ancho_etiqueta - 1 * cm, alto_etiqueta)
+        x_pos = x + (ancho_etiqueta - precio_actual.width) / 2
+        precio_actual.drawOn(c, x_pos, y + alto_etiqueta - 5 * cm - precio_actual.height)
 
-root.mainloop()
+        # 4. Precio anterior tachado
+        precio_anterior = Paragraph(f"<b>Antes:</b> <strike>$ {producto['precio_anterior']}</strike>", estilos['normal'])
+        precio_anterior.wrapOn(c, ancho_etiqueta - 1 * cm, alto_etiqueta)
+        x_pos = x + (ancho_etiqueta - precio_anterior.width) / 2
+        precio_anterior.drawOn(c, x_pos, y + alto_etiqueta - 6.5 * cm - precio_anterior.height)
+
+        # 5. Precio por litro
+        precio_litro = Paragraph(f"Precio por litro: $ {producto['precio_litro']}/L", estilos['other'])
+        precio_litro.wrapOn(c, ancho_etiqueta - 1 * cm, alto_etiqueta)
+        x_pos = x + 0.5 * cm  # Alineado a la izquierda
+        precio_litro.drawOn(c, x_pos, y + 1 * cm)
+
+        # 6. Código de barras numérico (alineado a la derecha)
+        codigo = Paragraph(f" {producto['codigo_barras']}", estilos['other1'])
+        codigo.wrapOn(c, ancho_etiqueta - 1 * cm, alto_etiqueta)
+        x_pos = x + ancho_etiqueta - codigo.width - 0.5 * cm  # Alineado a la derecha
+        codigo.drawOn(c, x_pos, y + 1 * cm)
+        # Código de barras
+
+
+    c.save()
+
+
+# Ejemplo de uso
+productos = [
+    {
+        'titulo': '',
+        'descripcion': 'Extra virgen 1L botella vidrio',
+        'precio': '6.99',
+        'precio_anterior': '8.99',
+        'precio_litro': '6.99',
+        'codigo_barras': '123456789012'
+    },
+    {
+        'titulo': '',
+        'descripcion': 'Leche Entera Pack Pack de 6 botellas de 1L',
+        'precio': '4.50',
+        'precio_anterior': '5.99',
+        'precio_litro': '0.75',
+        'codigo_barras': '987654321098'
+    },
+    {
+        'titulo': 'Leche Entera',
+        'descripcion': 'Pack de 6 botellas de 1L',
+        'precio': '4.50',
+        'precio_anterior': '5.99',
+        'precio_litro': '0.75',
+        'codigo_barras': '987654321098'
+    },
+    {
+        'titulo': 'Leche Entera',
+        'descripcion': 'Pack de 6 botellas de 1L',
+        'precio': '4.50',
+        'precio_anterior': '5.99',
+        'precio_litro': '0.75',
+        'codigo_barras': '987654321098'
+    },
+    # Agrega más productos según necesites
+]
+
+# disposicion = input("Elige disposición (1x1, 2x1, 4x1): ").strip().lower()
+disposicion= "4x1"
+generar_etiquetas(productos, disposicion)
+print("PDF generado correctamente!") 
+def abrir_pdf(ruta_archivo):
+    # Para Windows
+            if os.name == 'nt':
+                os.startfile(ruta_archivo)
+            # Para Linux o macOS
+            else:
+                opener = 'open' if sys.platform == 'darwin' else 'xdg-open'
+                subprocess.run([opener, ruta_archivo])
+
+        # Ejemplo de uso
+abrir_pdf("ofertas.pdf")

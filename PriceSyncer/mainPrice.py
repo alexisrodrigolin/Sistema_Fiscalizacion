@@ -11,6 +11,7 @@ import barcode
 from barcode.ean import EuropeanArticleNumber13
 from barcode.writer import ImageWriter
 import os
+import subprocess
 
 
 class main():
@@ -553,25 +554,71 @@ class main():
         tb.Button(cfg, style= "darkly", text="Guardar", command=save).pack(pady=10)
         tb.Button(cfg, text="Menu", style= "darkly", command=cfg.destroy).pack(pady=10)
     def etiFrame(self,event=0):
+        self.datos_productos=[]
+        def desmarcar_columna(columna):
+    # Iterar sobre todas las filas (listas de variables BooleanVar)
+            for vars_list in check_dict.values():
+                # Verificar si la columna existe en esta fila
+                if columna < len(vars_list):
+                    # Cambiar el valor de la variable a False
+                    vars_list[columna].set(False) 
+        
         def cargar(status=1):
-            datos_productos=[]
+           
+            self.datos_productos=[]
             for res in self.Back.etiquetasSearch(instruc=status):
                 net=""
                 for w in (4,5,6,7,8):
                     if res[w]: net+=f"{res[w]} "
                 # Plu, precio, descr, pasillo, precio1, precio2, precio3, fecha de mod, cant1,cant2,cant3
                 values=(res[1], res[3], f"{net}", res[9], res[14], res[16], res[18],res[19], "",res[13],res[15],res[17]) 
-                datos_productos.append(values)
+                self.datos_productos.append(values)
                 
-            datos_productos.sort(key= lambda x: (x[3] is None,x[3]))
-            cargar_filas_desde_tuplas(datos_productos)
+            self.datos_productos.sort(key= lambda x: (x[3] is None,x[3]))
+            cargar_filas_desde_tuplas(self.datos_productos)
+            if status==1:
+                Rap.config(state="Normal")
+                Of1.config(state="disabled")
+                Of2.config(state="disabled")
+                Of4.config(state="disabled")
+                changeControl(1)
+                desmarcar_columna(1)
+                desmarcar_columna(2)
+                desmarcar_columna(3)
+            else:
+                Rap.config(state="disabled")
+                Of1.config(state="normal")
+                Of2.config(state="normal")
+                Of4.config(state="normal")
+                changeControl(2)
+                desmarcar_columna(0)
+                desmarcar_columna(2)
+                desmarcar_columna(3)
+        def limpiarPantalla():
+            for row_frame in check_frame.winfo_children():
+                                        for i, chk in enumerate(row_frame.winfo_children()):
+                                            if i == 0:
+                                                
+                                                chk.configure(state="disabled")
+                                            else:
+                                                chk.configure(state="normal")
+            tree.delete(*tree.get_children())  # Eliminar todas las filas del Treeview
+            for widget in check_frame.winfo_children():  # Destruir todos los Checkbuttons anteriores
+                    widget.destroy()
+            check_dict.clear()  
+            Rap.config(state="normal")
+            Of1.config(state="normal")
+            Of2.config(state="normal")
+            Of4.config(state="normal")
         control=tk.StringVar(value="EtiR")
+        
         def changeControl(status):
             if status==1:
                 Rap.config(bootstyle="Success")
                 Of1.config(bootstyle="dark")
                 Of2.config(bootstyle="dark")
                 Of4.config(bootstyle="dark")
+
             elif status==2:
                 Rap.config(bootstyle="dark")
                 Of1.config(bootstyle="Dark")
@@ -587,6 +634,22 @@ class main():
                 Of1.config(bootstyle="Success")
                 Of2.config(bootstyle="Dark")
                 Of4.config(bootstyle="Dark")
+            if status==3 or status==2 or status==4:
+                print("hi")
+                for row_frame in check_frame.winfo_children():
+                            for i, chk in enumerate(row_frame.winfo_children()):
+                                if i == 0:
+                                    chk.configure(state="disabled")
+                                    
+                                else:
+                                    chk.configure(state="normal")
+            elif status==1:
+                for row_frame in check_frame.winfo_children():
+                            for i, chk in enumerate(row_frame.winfo_children()):
+                                if not i == 0:  
+                                    chk.configure(state="disabled")
+                                else:
+                                    chk.configure(state="normal")
         eti=tk.Frame(self.app,)
         eti.place(relheight=1,relwidth=1,   relx=0,rely=0)
         Rap=tb.Button(eti, style="Success",text="Etiqueta Rapida", command=lambda: changeControl(1))
@@ -599,7 +662,7 @@ class main():
         Of4.place(relx=0., rely=0.27,relheight=0.05,relwidth=0.09)
         Of2.place(relx=0., rely=0.34,relheight=0.05,relwidth=0.09)
         Of1.place(relx=0, rely=0.41,relheight=0.05,relwidth=0.09)
-        tb.Button(eti, style="dark",text="Buscar").place(relheight=0.05,relwidth=0.07,relx=0.8, rely=0.9)
+        tb.Button(eti, style="dark",text="Buscar").place(relheight=0.05,relwidth=0.09,relx=0.75, rely=0.9)
         main_frame = tk.Frame(eti)
         main_frame.place(relx=0.1,relheight=0.65,relwidth=0.85,rely=0.1)
 
@@ -630,7 +693,7 @@ class main():
         tree.column("Precio2", width=80, anchor="center")
         tree.column("Precio3", width=80, anchor="center")
         tree.grid(row=0, column=1, columnspan=5, sticky="nwe", padx=1)
-
+        tree.configure(selectmode="none")
         # Diccionario para almacenar Checkbuttons vinculados con filas del Treeview
         check_dict = {}
 
@@ -643,61 +706,36 @@ class main():
                     tree.item(item_id, tags=())
 
         # Configurar color de filas seleccionadas
-        tree.tag_configure("seleccionado", background="lightblue")
+        tree.tag_configure("seleccionado", background="green")
 
-        # Función para agregar filas dinámicamente
-        # def agregar_fila():
-        #     fila_id = len(check_dict)  # Número de fila actual
-
-        #     # Insertar fila en Treeview y guardar su ID
-        #     item_id = tree.insert("", "end", values=(f"Dato fila {fila_id+1}",))
-        #     tree["height"] = fila_id + 1  # Ajustar la altura del Treeview
-
-        #     # Crear un Frame para la nueva fila de Checkbuttons y ubicarlo en una fila nueva
-        #     row_frame = tb.Frame(check_frame)
-        #     row_frame.grid(row=fila_id, column=0, sticky="w")  # Cada grupo de Checkbuttons en una fila nueva
-
-        #     # Crear 4 Checkbuttons dentro de la fila
-        #     row_vars = []
-        #     for j in range(4):
-        #         var = tk.BooleanVar()
-        #         row_vars.append(var)
-        #         chk = tb.Checkbutton(row_frame, text=f"Opción {j+1}", variable=var, command=actualizar_treeview)
-        #         chk.pack(side="left", padx=5)
-
-        #     # Asociar Checkbuttons con la fila en el Treeview
-        #     check_dict[item_id] = row_vars
-
-        #     # Actualizar scrollbar
-        #     canvas.update_idletasks()
-        #     canvas.configure(scrollregion=canvas.bbox("all"))
-
-        # # Botón para agregar filas dinámicamente
-        # btn_agregar = tb.Button(eti, text="Agregar Fila", command=agregar_fila)
-        # btn_agregar.place(relheight=0.05,relwidth=0.05,relx=0.8,rely=0.8)
-        
-      
     # Función modificada para cargar desde tuplas
         def cargar_filas_desde_tuplas(datos):
+            # Limpiar datos previos
+            tree.delete(*tree.get_children())  # Eliminar todas las filas del Treeview
+            for widget in check_frame.winfo_children():  # Destruir todos los Checkbuttons anteriores
+                widget.destroy()
+            check_dict.clear()  # Reiniciar el diccionario de Checkbuttons
+
+            # Cargar nuevos datos
             for producto in datos:
-                precio= f"$ {producto[1]}" if not producto[1] is None else "$"
-                precio1= f"$ {producto[4]}" if not producto[4] is None else "$"
-                precio2= f"$ {producto[5]}" if not producto[5] is None else "$"
-                precio3= f"$ {producto[6]}" if not producto[6] is None else "$"
+                precio = f"$ {producto[1]}" if producto[1] is not None else "$"
+                precio1 = f"$ {producto[4]}" if producto[4] is not None else "$"
+                precio2 = f"$ {producto[5]}" if producto[5] is not None else "$"
+                precio3 = f"$ {producto[6]}" if producto[6] is not None else "$"
                 descripcion = producto[2]
                 opciones = producto[8:]
-                
+
                 # Insertar fila en Treeview
-                item_id = tree.insert("", "end", values=(descripcion,precio,precio1,precio2,precio3))
-                
+                item_id = tree.insert("", "end", values=(descripcion, precio, precio1, precio2, precio3))
+
                 # Crear Frame para checkboxes
                 row_frame = tb.Frame(check_frame)
                 row_frame.grid(row=len(check_dict), column=0, sticky="w")
-                
+
                 # Variables y checkboxes
                 row_vars = []
                 for i, texto_opcion in enumerate(opciones):
-                    var = tk.BooleanVar()
+                    var = tk.BooleanVar(value=True)
                     row_vars.append(var)
                     chk = tb.Checkbutton(
                         row_frame, 
@@ -708,19 +746,44 @@ class main():
                     chk.pack(side="left", padx=5)
                 
                 check_dict[item_id] = row_vars
-            
+
             # Actualizar scroll y altura del treeview
             tree["height"] = len(datos)
             canvas.update_idletasks()
             canvas.configure(scrollregion=canvas.bbox("all"))
-
+            actualizar_treeview()
         # Cargar los datos al iniciar
         
         # Empaquetar el canvas y el scrollbar
         canvas.pack(side="left", fill="both", expand=True)
         scrollbar.pack(side="right", fill="y")
-        cargar(2)
-    def eti(self):
+        tb.Button(eti, style="success-outline",text= "Cargar Etiquetas", command= lambda: cargar(status=1)).place(relheight=0.05, relwidth=0.09, relx=0.2, rely=0.9)
+        tb.Button(eti, style= "success-outline",text= "Cargar Ofertas", command= lambda: cargar(status=2)).place(relheight=0.05, relwidth=0.09, relx=0.1, rely=0.9)
+        tb.Button(eti, style="dark",text= "Borrar Etiquetas", command= lambda: cargar(status=1)).place(relheight=0.05, relwidth=0.09, relx=0.9, rely=0.84)
+        tb.Button(eti, style= "dark",text= "Borrar Ofertas", command= lambda: cargar(status=1)).place(relheight=0.05, relwidth=0.09, relx=0.9, rely=0.9)
+        tb.Button(eti, style= "success-outline",text= "Limpiar Pantalla", command= lambda: limpiarPantalla()).place(relheight=0.05, relwidth=0.09, relx=0, rely=0.9)
+        tb.Button(eti, style= "dark",text= "Imprimir", command= lambda: obtener_productos_seleccionados()).place(relheight=0.05, relwidth=0.09, relx=0.8, rely=0.84)
+        def obtener_productos_seleccionados():
+                productos=[]
+                
+                for item_id, vars_list in check_dict.items():
+                    estados = [var.get() for var in vars_list]
+
+                    nombre_producto = tree.item(item_id, "values")[0]  # Obtener el nombre en el Treeview
+                    print(estados)
+                    print(nombre_producto)
+                    print(self.datos_productos)
+                    if estados[0]:
+                        # print("here")
+                        for producto in self.datos_productos:
+                            print(nombre_producto)
+                            if producto[2] == nombre_producto:
+                                print(nombre_producto)
+                                value={"nombre": f"{producto[2]}", "precio": f"${producto[1]}", "codigo": f"{producto[0]}",}
+                                productos.append(value)  # Guardamos el nombre y los estados
+                self.eti(productos)
+                print(productos)
+    def eti(self,productos):
         PAGE_WIDTH, PAGE_HEIGHT = A4
         LABEL_WIDTH = 5.8 * cm
         LABEL_HEIGHT = 2.8 * cm
@@ -739,15 +802,15 @@ class main():
         ZONA_PRECIO = 1.55 * cm
         ZONA_CODIGO = 3.0 * cm
 
-        productos = [
-            {"nombre": "1234567890123456789456", "precio": "$5999.99", "codigo": "7791274087615"},
-            {"nombre": "1234567890123456789456", "precio": "$5999.99", "codigo": "7791274087615"},
-            {"nombre": "1234567890123456789456", "precio": "$5999.99", "codigo": "7791274087615"},
-            {"nombre": "1234567890123456789456", "precio": "$5999.99", "codigo": "7791274087615"},
-            {"nombre": "1234567890123456789456", "precio": "$5999.99", "codigo": "7791274087615"},
-            {"nombre": "1234567890123456789456", "precio": "$5999.99", "codigo": "7791274087615"},
-            {"nombre": "1234567890123456789456", "precio": "$59999.99", "codigo": "7791274087615"},
-        ]
+        # productos = [
+        #     {"nombre": "Arcor mermelada 150gr", "precio": "$5999.99", "codigo": "7791274087615","cantidad": "1"},
+        #     {"nombre": "1234567890123456789456", "precio": "$5999.99", "codigo": "7791274087615"},
+        #     {"nombre": "1234567890123456789456", "precio": "$5999.99", "codigo": "7791274087615"},
+        #     {"nombre": "1234567890123456789456", "precio": "$5999.99", "codigo": "7791274087615"},
+        #     {"nombre": "1234567890123456789456", "precio": "$5999.99", "codigo": "7791274087615"},
+        #     {"nombre": "1234567890123456789456", "precio": "$5999.99", "codigo": "7791274087615"},
+        #     {"nombre": "1234567890123456789456", "precio": "$59999.99", "codigo": "7791274087615"},
+        # ]
         def generar_codigo_barras(codigo):
                 # Obtener clase EAN-13
                 ean = barcode.get_barcode_class("ean13")
@@ -832,5 +895,16 @@ class main():
             c.save()
             print("PDF generado correctamente")
         crear_etiquetas()
+        def abrir_pdf(ruta_archivo):
+    # Para Windows
+            if os.name == 'nt':
+                os.startfile(ruta_archivo)
+            # Para Linux o macOS
+            else:
+                opener = 'open' if sys.platform == 'darwin' else 'xdg-open'
+                subprocess.run([opener, ruta_archivo])
+
+        # Ejemplo de uso
+        abrir_pdf("etiquetas_precios.pdf")
 main()
         

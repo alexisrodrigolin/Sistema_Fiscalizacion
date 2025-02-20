@@ -10,16 +10,22 @@ from reportlab.lib.enums import TA_CENTER, TA_RIGHT
 import os
 import subprocess
 
-def generar_etiquetas(productos, disposicion, nombre_archivo="ofertas.pdf"):
+def generar_etiquetas(productos, disposicion, nombre_archivo=
+                      "ofertas.pdf"):
     # Configurar disposición y orientación
-    if disposicion == "1x1" or disposicion == "4x1":
-        ancho, alto = landscape(A4)  # Apaisado
+    if disposicion == "1x1" :
+        ancho, alto = landscape(A4)
+        state=1.5  # Apaisado
+    elif  disposicion == "4x1":
+         ancho, alto = landscape(A4) 
+         state=1
     else:
+        state=1.2
         ancho, alto = A4  # Vertical
     tamanio_fuente = {
-        '1x1': {'titulo': 40, 'precio': 30, 'normal': 15},
-        '2x1': {'titulo': 36, 'precio': 28, 'normal': 14},
-        '4x1': {'titulo': 26, 'precio': 22, 'normal': 12}
+        '1x1': {'titulo': 38, 'precio': 48, 'normal': 15},
+        '2x1': {'titulo': 30, 'precio': 38, 'normal': 14},
+        '4x1': {'titulo': 22, 'precio': 30, 'normal': 8}
     }[disposicion]
     margen = 1 * cm                                     
     estilos = {
@@ -27,7 +33,7 @@ def generar_etiquetas(productos, disposicion, nombre_archivo="ofertas.pdf"):
             name='Titulo', 
             fontSize=tamanio_fuente["titulo"], 
             textColor=black, 
-            leading=24,  # Aumentar leading para evitar solapamiento
+            leading=29,  # Aumentar leading para evitar solapamiento
             alignment=TA_CENTER  # Alineación centrada
         ),
         'precio': ParagraphStyle(
@@ -41,14 +47,14 @@ def generar_etiquetas(productos, disposicion, nombre_archivo="ofertas.pdf"):
             name='Normal',
             fontSize=tamanio_fuente['normal'],
             textColor=black,
-            leading=12,
+            leading=20,
             alignment=TA_CENTER  # Alineación centrada
         ),
         'other': ParagraphStyle(
             name='other',
             fontSize=tamanio_fuente['normal'],
             textColor=black,
-            leading=12,
+            leading=10,
               # Alineación centrada
         ),
         'other1': ParagraphStyle(
@@ -90,38 +96,31 @@ def generar_etiquetas(productos, disposicion, nombre_archivo="ofertas.pdf"):
         c.rect(x, y, ancho_etiqueta, alto_etiqueta)
 
         # Contenido
-        elementos = [
-            (Paragraph(f"<b>~Oferta~</b>", estilos['titulo']), 0.5 * cm),
-            (Paragraph(producto['descripcion'], estilos['precio']), 1 * cm),
-            (Paragraph(f"<b>Ahora:</b> $ {producto['precio']}", estilos['precio']), 1 * cm),
-            (Paragraph(f"<b>Antes:</b> <strike>$ {producto['precio_anterior']}</strike>", estilos['normal']), 1 * cm),
-            (Paragraph(f"Precio por litro: $ {producto['precio_litro']}/L", estilos['other']), 1 * cm),
-            (Paragraph(f" {producto['codigo_barras']}", estilos['other1']), 1 * cm),
-        ]
+       
 
         current_y = y + alto_etiqueta - 0.5 * cm
-        oferta = Paragraph(f"<b>~Oferta~</b>", estilos['titulo'])
+        oferta = Paragraph(f"<b><u>OFERTA</u></b>", estilos['precio'])
         oferta.wrapOn(c, ancho_etiqueta - 1 * cm, alto_etiqueta)
         x_pos = x + (ancho_etiqueta - oferta.width) / 2  # Centrado horizontal
-        oferta.drawOn(c, x_pos, y + alto_etiqueta - 1 * cm - oferta.height)
+        oferta.drawOn(c, x_pos, y + alto_etiqueta - (0.5 * cm*state) - oferta.height)
 
         # 2. Descripción del producto
-        descripcion = Paragraph(producto['descripcion'], estilos['precio'])
+        descripcion = Paragraph(producto['descripcion'], estilos['titulo'])
         descripcion.wrapOn(c, ancho_etiqueta - 1 * cm, alto_etiqueta)
         x_pos = x + (ancho_etiqueta - descripcion.width) / 2
-        descripcion.drawOn(c, x_pos, y + alto_etiqueta - 3 * cm - descripcion.height)
+        descripcion.drawOn(c, x_pos, y + alto_etiqueta - (1.9 * cm*state) - descripcion.height)
 
         # 3. Precio actual
-        precio_actual = Paragraph(f"<b>Ahora:</b> $ {producto['precio']}", estilos['precio'])
+        precio_actual = Paragraph(f"Ahora: <b>3x ${producto['precio']}</b>", estilos['precio'])
         precio_actual.wrapOn(c, ancho_etiqueta - 1 * cm, alto_etiqueta)
         x_pos = x + (ancho_etiqueta - precio_actual.width) / 2
-        precio_actual.drawOn(c, x_pos, y + alto_etiqueta - 5 * cm - precio_actual.height)
+        precio_actual.drawOn(c, x_pos, y + alto_etiqueta - (4.5 * cm*state) - precio_actual.height)
 
         # 4. Precio anterior tachado
-        precio_anterior = Paragraph(f"<b>Antes:</b> <strike>$ {producto['precio_anterior']}</strike>", estilos['normal'])
+        precio_anterior = Paragraph(f"<b>Antes:</b> $ {producto['precio_anterior']}", estilos['other'])
         precio_anterior.wrapOn(c, ancho_etiqueta - 1 * cm, alto_etiqueta)
-        x_pos = x + (ancho_etiqueta - precio_anterior.width) / 2
-        precio_anterior.drawOn(c, x_pos, y + alto_etiqueta - 6.5 * cm - precio_anterior.height)
+        x_pos = x + 5*cm+(ancho_etiqueta - precio_anterior.width) / 2
+        precio_anterior.drawOn(c, x_pos, y + alto_etiqueta - (6.5 * cm*state) - precio_anterior.height)
 
         # 5. Precio por litro
         precio_litro = Paragraph(f"Precio por litro: $ {producto['precio_litro']}/L", estilos['other'])
@@ -130,7 +129,7 @@ def generar_etiquetas(productos, disposicion, nombre_archivo="ofertas.pdf"):
         precio_litro.drawOn(c, x_pos, y + 1 * cm)
 
         # 6. Código de barras numérico (alineado a la derecha)
-        codigo = Paragraph(f" {producto['codigo_barras']}", estilos['other1'])
+        codigo = Paragraph(f"Art: {producto['codigo_barras']}", estilos['other1'])
         codigo.wrapOn(c, ancho_etiqueta - 1 * cm, alto_etiqueta)
         x_pos = x + ancho_etiqueta - codigo.width - 0.5 * cm  # Alineado a la derecha
         codigo.drawOn(c, x_pos, y + 1 * cm)
@@ -152,8 +151,8 @@ productos = [
     },
     {
         'titulo': '',
-        'descripcion': 'Leche Entera Pack Pack de 6 botellas de 1L',
-        'precio': '4.50',
+        'descripcion': 'Leche Entera Pack Pack de 6 boewewtellas de 1L',
+        'precio': '11,999.99',
         'precio_anterior': '5.99',
         'precio_litro': '0.75',
         'codigo_barras': '987654321098'
@@ -161,7 +160,7 @@ productos = [
     {
         'titulo': 'Leche Entera',
         'descripcion': 'Pack de 6 botellas de 1L',
-        'precio': '4.50',
+        'precio': '4499.99',
         'precio_anterior': '5.99',
         'precio_litro': '0.75',
         'codigo_barras': '987654321098'
@@ -169,8 +168,8 @@ productos = [
     {
         'titulo': 'Leche Entera',
         'descripcion': 'Pack de 6 botellas de 1L',
-        'precio': '4.50',
-        'precio_anterior': '5.99',
+        'precio': '3999.99',
+        'precio_anterior': '299925.99',
         'precio_litro': '0.75',
         'codigo_barras': '987654321098'
     },
@@ -191,4 +190,4 @@ def abrir_pdf(ruta_archivo):
                 subprocess.run([opener, ruta_archivo])
 
         # Ejemplo de uso
-abrir_pdf("ofertas.pdf")
+# abrir_pdf("ofertas.pdf")

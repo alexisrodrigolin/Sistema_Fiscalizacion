@@ -1,4 +1,5 @@
 import mysql.connector as sql
+from datetime import date
 import json
 from mysql.connector import Error
 class connection():
@@ -21,7 +22,7 @@ class connection():
         self.etiR=[]
         self.etiO=[]
         self.bridge="PLU, PLU2, Precio, Marca, Descripcion, Tipo_Sabor, Cantidad, Unidad,Pasillo,Costo,IVA,Ganancia, Cant1, Precio1, Cant2, Precio2, Cant3, Precio3, Fecha_de_Modificacion"
-    def search(self, codigo):
+    def search(self, codigo,status=0):
         instructionId= f"SELECT * FROM Art WHERE ID={codigo}"
         instructionPlu= f"SELECT * FROM Art WHERE PLU= {codigo}"
         instructionPlu2= f"SELECT * FROM Art WHERE PLU2= {codigo}"
@@ -37,11 +38,11 @@ class connection():
             return resultPlu
         elif resultPlu2:
             return resultPlu2
-        else:
-            instruction= f"INSERT INTO Art (PLU) VALUES('{codigo}')"
+        elif status==0:
+            instruction= f"INSERT INTO Art (PLU, Precio,Fecha_de_modificacion) VALUES('{codigo}','1','{date.today()}')"
             self.cursor.execute(instruction)
             self.mydb.commit()
-
+    
     def guardar(self, dic,id, status=0):
         net=''
         for clave, valor in dic.items():
@@ -110,7 +111,7 @@ class connection():
         instruction="Select * From etiq LIMIT 1000"
         instruction1= "Select * From Setiq LIMIT 1000"
         borrar_Instruction="TRUNCATE TABLE etiq"
-        borrar1_Instruction="TRUNCATE TABLE etiq1"
+        borrar1_Instruction="TRUNCATE TABLE Setiq"
         if instruc==1:
             self.cursor.execute(instruction)
             result= self.cursor.fetchall()
@@ -127,4 +128,4 @@ class connection():
             self.cursor.execute(borrar1_Instruction)
             self.mydb.commit()
             return
-        
+    

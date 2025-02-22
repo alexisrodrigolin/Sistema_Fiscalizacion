@@ -1,17 +1,24 @@
+from datetime import date
 import tkinter as tk
 import ttkbootstrap as tb   
 import priceB 
 import textwrap
 from tkinter import messagebox
-from reportlab.pdfgen import canvas
-from reportlab.lib.pagesizes import A4
-from reportlab.lib.units import cm
 from reportlab.lib.utils import simpleSplit
 import barcode
 from barcode.ean import EuropeanArticleNumber13
 from barcode.writer import ImageWriter
 import os
 import subprocess
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import A4, landscape
+from reportlab.lib.units import cm
+from reportlab.graphics.barcode import code128
+from reportlab.lib.colors import black, red
+from reportlab.platypus import Paragraph
+from reportlab.lib.styles import ParagraphStyle
+from reportlab.lib.enums import TA_CENTER, TA_RIGHT
+
 
 
 class main():
@@ -64,7 +71,7 @@ class main():
             self.P_control_value = tk.StringVar(value="Unidad:")
             self.P_menubutton = tb.Menubutton(self.app,textvariable=self.P_control_value, width=9,style= "darkly", )
             self.P_menu_op = tb.Menu(self.P_menubutton)
-            opciones=[ "Unidad","ml","Gramos", "Litros",  "KilosGramos", "Metros", "m³"]
+            opciones=[ "u","ml","gr", "L",  "Kl",'mg', "Mt", "m³"]
             for opcion in opciones:
                 self.P_menu_op.add_command(
                     label=opcion,
@@ -93,7 +100,7 @@ class main():
             self.P_preCan= tb.Label(self.app, text= f"<<<Precio por Cantidad>>>", font= ("Arial",  int(15 * self.Back.font)))
             self.P_cantidad1= tb.Label(self.app, text= "Cantidad 1:", font= ("Arial",  int(15 * self.Back.font)))
             self.P_cantidad1_value= tb.Entry(self.app, style= "darkly", width=7, font= ("Arial",  int(15 * self.Back.font)))
-            self.P_cantidad2= tb.Label(self.app, text= "Canridad 2:", font= ("Arial",  int(15 * self.Back.font)))
+            self.P_cantidad2= tb.Label(self.app, text= "Cantidad 2:", font= ("Arial",  int(15 * self.Back.font)))
             self.P_cantidad2_value= tb.Entry(self.app, style= "darkly", font= ("Arial",  int(15 * self.Back.font)), width=7)
             self.P_cantidad3= tb.Label(self.app, text= "Cantidad 3:", font= ("Arial",  int(15 * self.Back.font)))
             self.P_cantidad3_value= tb.Entry(self.app, style= "darkly", font= ("Arial",  int(15 * self.Back.font)), width=7)
@@ -173,11 +180,12 @@ class main():
             
             self.orden= ['plu', 'plu2','precio','marca','descripcion', 'tipo', 'cantidad', 'control',
                         'departamento', 'pasillo', 'costo','iva', 'ganancia', 
-                        "cantidad1",'precioC1', 'cantidad2', 'precioC2','cantidad3', 'precioC3']      
+                        "cantidad1",'precioC1', 'cantidad2', 'precioC2','cantidad3', 'precioC3',]      
             self.colsql= ['PLU','PLU2', 'Precio','Marca','Descripcion', 'Tipo_Sabor','Cantidad', 'Unidad',
                         'Departamento', 'Pasillo', 'Costo','IVA', 'Ganancia', 
                         "Cant1",'Precio1', 'Cant2', 'Precio2','Cant3', 'Precio3']  
         self.disable_entries(exclude=[self.P_id_value])
+        
         self.P_precio_value.bind("<FocusOut>", lambda event:self.agregar_sim(status=0, event=event))
         self.P_precioC1_value.bind("<FocusOut>", lambda event:self.agregar_sim(status=1, event=event))
         self.P_precioC2_value.bind("<FocusOut>", lambda event:self.agregar_sim(status=2, event=event))
@@ -188,21 +196,48 @@ class main():
         self.app.bind("<Escape>", self.menu)  
         self.app.bind("<Return>", self.buscar)  
         self.app.bind("<F1>", self.SearchByName)
+        self.P_id_value.focus_set()
     def SearchByName(self,event=0):
-           
-            
+            def select(event=0):
+                selected_item = self.tree.selection()
+                if selected_item:
+                    item = selected_item[0]
+                    # Obtener los valores de la fila
+                    valores = self.tree.item(item, "values")
+                    # Obtener el valor de la segunda columna (índice 1, porque comienza en 0)
+                    valor_columna = valores[3]
+                    escape()
+        
+                    # if status==0:
+                    self.buscar(Re=valor_columna)
+                    # elif status==1:
+                    #      self.etiFrame(x=valor_columna)
+            # if status==0:
             self.frame = tb.Frame(self.app)
             self.frame.place(rely=0,relheight=1,relwidth=1,relx=0)
-            
+            # elif status==1:
+            #      self.frame = tb.Toplevel(self.app)
+            #      self.frame.state("zoomed")
+                 
+            def escape(event=0,):
+                # if state==0:
+                self.app.bind("<Return>", self.buscar)
+                self.app.bind("<Escape>",self.menu)
+                # elif state==1:
+                #     pass
+                self.frame.destroy()
+                
+            self.app.bind("<Escape>",escape)
             tb.Label(self.frame, text="Búsqueda General (marca, descripción, sabor):").pack(pady=5)
             self.entry_busqueda = tb.Entry(self.frame, width=50)
             self.entry_busqueda.pack(pady=5)
-            self.entry_busqueda.bind("<Return>", self.realizar_busqueda)
+            # self.entry_busqueda.bind("<Return>", self.realizar_busqueda)
+            self.entry_busqueda.focus_set()
 
             tb.Label(self.frame, text="Cantidad exacta (Sin unidad):").pack(pady=5)
             self.entry_cantidad = tb.Entry(self.frame, width=20)
             self.entry_cantidad.pack(pady=5)
-            self.entry_cantidad.bind("<Return>", self.realizar_busqueda)
+            # self.app.bind("<Return>", self.realizar_busqueda)
             
             self.btn_buscar = tb.Button(
                 self.frame, text="Buscar", command=self.realizar_busqueda, 
@@ -211,21 +246,26 @@ class main():
 
             self.tree = tb.Treeview(
                 self.frame, 
-                columns=("Marca", "Descripción", "Tipo/Sabor", "Cantidad"), 
+                columns=( "Descripcion", "Cantidad","Precio","PLU",), 
                 show="headings",
                 height=15
             )
-            self.tree.heading("Marca", text="Marca")
-            self.tree.heading("Descripción", text="Descripción")
-            self.tree.heading("Tipo/Sabor", text="Tipo/Sabor")
+ 
+            self.tree.column("Descripcion", width=600)
+            self.tree.column("Cantidad", width=40)
+            self.tree.column("Precio", width=40)
+            self.tree.column("PLU", width=40,)
+            self.tree.heading("Descripcion", text="Descripcion")
             self.tree.heading("Cantidad", text="Cantidad ")
+            self.tree.heading("Precio", text="Precio ")
+            self.tree.heading("PLU", text="PLU",)
             self.tree.pack(fill="both", expand=True)
             
             # Scrollbar
             scrollbar = tb.Scrollbar(self.tree, orient="vertical", command=self.tree.yview)
             self.tree.configure(yscroll=scrollbar.set)
             scrollbar.pack(side="right", fill="y")
-        
+            self.tree.bind("<<TreeviewSelect>>", select)
         
     def realizar_busqueda(self, event=None):
             terminos_general = self.entry_busqueda.get().strip()
@@ -235,19 +275,24 @@ class main():
             self.tree.delete(*self.tree.get_children())
             
             resultados = self.Back.buscar_productos(terminos_general, cantidad)
-            print(resultados)
             if not resultados:
                 messagebox.showinfo("Información", "No se encontraron coincidencias")
                 return
             
             for producto in resultados:
+                net=''
+                for x in (4,5,6):
+                     if producto[x] is not None: net+=f"{producto[x]} "
+                cant= ''
+                for y in (7,8):
+                    if producto[x] is not None or producto[x]!= "Unidad:":
+                         cant+=f"{producto[x]} "
                 self.tree.insert("", 'end', values=(
-                    producto[4],
-                    producto[5],
-                    producto[6],
-                    producto[7]
+                    net,
+                    cant,
+                    f"$ {format(producto[3],",.2f")}",
+                    producto[1]
                 ))
-                
 
     def borrarOf(self):
         Of= ["cantidad1",'precioC1', 'cantidad2', 'precioC2','cantidad3', 'precioC3']
@@ -269,14 +314,15 @@ class main():
                 dic.update({f'{self.colsql[x]}':f'{command[x][2:]}'})  
             elif command[x]=='':
                 dic.update({f'{self.colsql[x]}':'NULL'})
-        
+        dic.update({'Fecha_de_modificacion': f'{date.today()}'})
         self.Back.guardar(dic, self.P_id_value.get(),status=status)
 
         self.clean()
 
-    def buscar(self,event=0):
+    def buscar(self,event=0,Re=0):
         self.app.bind("<Escape>", self.clean)
-        value= self.P_id_value.get()
+        value= Re if Re else self.P_id_value.get()
+        self.clean()
         if not value.isdigit():
             self.P_id_value.delete(0, tk.END)
             return
@@ -299,11 +345,13 @@ class main():
                 elif result[x] and x==8:
                     self.P_control_value.set(result[x])
                 elif result[x] and (x==3 or x==15 or x==17 or x==19):
-                    command.insert(0, f"$ {result[x]:.2f}")
+                    command.insert(0, f"$ {format(result[x],',.2f')}")
                 else:
                     continue
+            self.P_fecha.config(text=f'Fecha de Modificacion: {result[20]}')
+            
         else:
-            self.buscar() 
+            self.buscar(Re=value) 
                   
     def clean(self, event=0):
 
@@ -339,7 +387,7 @@ class main():
                 # Intentar convertir a float
                 numeric_value = float(raw_value)
                 # Formatear con 2 decimales y símbolo $
-                formatted = f"$ {numeric_value:.2f}"
+                formatted = f"$ {format(numeric_value,",.2f")}"
                 entry.delete(0, tk.END)
                 entry.insert(0, formatted)
             except ValueError:
@@ -553,140 +601,312 @@ class main():
             font.insert(0, self.Back.datos['Font'])
         tb.Button(cfg, style= "darkly", text="Guardar", command=save).pack(pady=10)
         tb.Button(cfg, text="Menu", style= "darkly", command=cfg.destroy).pack(pady=10)
-    def etiFrame(self,event=0):
-        self.datos_productos=[]
-        def desmarcar_columna(columna):
-    # Iterar sobre todas las filas (listas de variables BooleanVar)
-            for vars_list in check_dict.values():
-                # Verificar si la columna existe en esta fila
-                if columna < len(vars_list):
-                    # Cambiar el valor de la variable a False
-                    vars_list[columna].set(False) 
-        
+    def etiFrame(self,event=0,x=0):
+
+            
+        def desmarcar_columna(columna,x=1):
+        # Iterar sobre todas las filas (listas de variables BooleanVar)
+                for vars_list in check_dict.values():
+                    # Verificar si la columna existe en esta fila
+                    if columna < len(vars_list):
+                        # Cambiar el valor de la variable a False
+                        if x==1:
+                            vars_list[columna].set(True) 
+                        else:
+                            vars_list[columna].set(False) 
         def cargar(status=1):
-           
-            self.datos_productos=[]
-            for res in self.Back.etiquetasSearch(instruc=status):
-                net=""
-                for w in (4,5,6,7,8):
-                    if res[w]: net+=f"{res[w]} "
-                # Plu, precio, descr, pasillo, precio1, precio2, precio3, fecha de mod, cant1,cant2,cant3
-                values=(res[1], res[3], f"{net}", res[9], res[14], res[16], res[18],res[19], "",res[13],res[15],res[17]) 
-                self.datos_productos.append(values)
+            
+                self.datos_productos=[]
+                for res in self.Back.etiquetasSearch(instruc=status):
+                    net=""
+                    for w in (4,5,6,7,8):
+                        if w==8 and res[8] =="Unidad:":
+                            pass
+                        elif res[w]: 
+                            net+=f"{res[w]} "
+                    # Plu, precio, descr, pasillo, precio1, precio2, precio3, fecha de mod, 0, cant1,cant2,cant3, cant u, uni
+                    values=(res[1], res[3], f"{net}", res[9], res[14], res[16], res[18],res[19], "",res[13],res[15],res[17],res[7],res[8]) 
+                    self.datos_productos.append(values)
                 
-            self.datos_productos.sort(key= lambda x: (x[3] is None,x[3]))
-            cargar_filas_desde_tuplas(self.datos_productos)
-            if status==1:
-                Rap.config(state="Normal")
-                Of1.config(state="disabled")
-                Of2.config(state="disabled")
-                Of4.config(state="disabled")
-                changeControl(1)
-                desmarcar_columna(1)
-                desmarcar_columna(2)
-                desmarcar_columna(3)
-            else:
-                Rap.config(state="disabled")
+                    
+                self.datos_productos.sort(key= lambda x: (x[3] is None,x[3]))
+                cargar_filas_desde_tuplas(self.datos_productos)
+                if status==1:
+                    Rap.config(state="Normal")
+                    Of1.config(state="disabled")
+                    Of2.config(state="disabled")
+                    Of4.config(state="disabled")
+                    changeControl(1)
+                    desmarcar_columna(0)
+                else:
+                    Rap.config(state="disabled")
+                    Of1.config(state="normal")
+                    Of2.config(state="normal")
+                    Of4.config(state="normal")
+                    changeControl(2)
+                    desmarcar_columna(1)
+        def limpiarPantalla():
+                for row_frame in check_frame.winfo_children():
+                                            for i, chk in enumerate(row_frame.winfo_children()):
+                                                if i == 0:
+                                                    
+                                                    chk.configure(state="disabled")
+                                                else:
+                                                    chk.configure(state="normal")
+                tree.delete(*tree.get_children())  # Eliminar todas las filas del Treeview
+                for widget in check_frame.winfo_children():  # Destruir todos los Checkbuttons anteriores
+                        widget.destroy()
+                check_dict.clear()  
+                Rap.config(state="normal")
                 Of1.config(state="normal")
                 Of2.config(state="normal")
                 Of4.config(state="normal")
-                changeControl(2)
-                desmarcar_columna(0)
-                desmarcar_columna(2)
-                desmarcar_columna(3)
-        def limpiarPantalla():
-            for row_frame in check_frame.winfo_children():
-                                        for i, chk in enumerate(row_frame.winfo_children()):
-                                            if i == 0:
-                                                
-                                                chk.configure(state="disabled")
-                                            else:
-                                                chk.configure(state="normal")
-            tree.delete(*tree.get_children())  # Eliminar todas las filas del Treeview
-            for widget in check_frame.winfo_children():  # Destruir todos los Checkbuttons anteriores
-                    widget.destroy()
-            check_dict.clear()  
-            Rap.config(state="normal")
-            Of1.config(state="normal")
-            Of2.config(state="normal")
-            Of4.config(state="normal")
-        control=tk.StringVar(value="EtiR")
+                self.datos_productos.clear()
         
-        def changeControl(status):
-            if status==1:
-                Rap.config(bootstyle="Success")
-                Of1.config(bootstyle="dark")
-                Of2.config(bootstyle="dark")
-                Of4.config(bootstyle="dark")
-
-            elif status==2:
-                Rap.config(bootstyle="dark")
-                Of1.config(bootstyle="Dark")
-                Of2.config(bootstyle="Dark")
-                Of4.config(bootstyle="Success")
-            elif status==3:
-                Rap.config(bootstyle="Dark")
-                Of1.config(bootstyle="Dark")
-                Of2.config(bootstyle="Success")
-                Of4.config(bootstyle="Dark")
-            elif status==4:
-                Rap.config(bootstyle="dark")
-                Of1.config(bootstyle="Success")
-                Of2.config(bootstyle="Dark")
-                Of4.config(bootstyle="Dark")
-            if status==3 or status==2 or status==4:
-                print("hi")
-                for row_frame in check_frame.winfo_children():
-                            for i, chk in enumerate(row_frame.winfo_children()):
-                                if i == 0:
-                                    chk.configure(state="disabled")
+        def entrada(event=0,Re=0):
+        
+                print(Re)
+                if Re:
+                    val= Re 
+                else:
+                     val=Etientrada.get()
+                     Etientrada.delete(0,tk.END)
+                doc=self.Back.search(val,status=1)
+                
+                if doc is not None:
+                    for res in doc:
+                                    net=""
+                                    for w in (4,5,6,7,8):
+                                        if w==8 and res[8] =="Unidad:":
+                                            pass
+                                        elif res[w]: 
+                                            net+=f"{res[w]} "
+                                    # Plu, precio, descr, pasillo, precio1, precio2, precio3, fecha de mod, 0, cant1,cant2,cant3, cant u, uni
+                                    values=(res[1], res[3], f"{net}", res[10], res[15], res[17], res[19],res[20], "",res[14],res[16],res[18],res[7],res[8]) 
+                                    self.datos_productos.append(values)
                                     
-                                else:
-                                    chk.configure(state="normal")
-            elif status==1:
-                for row_frame in check_frame.winfo_children():
-                            for i, chk in enumerate(row_frame.winfo_children()):
-                                if not i == 0:  
-                                    chk.configure(state="disabled")
-                                else:
-                                    chk.configure(state="normal")
-        eti=tk.Frame(self.app,)
-        eti.place(relheight=1,relwidth=1,   relx=0,rely=0)
-        Rap=tb.Button(eti, style="Success",text="Etiqueta Rapida", command=lambda: changeControl(1))
-        Of4=tb.Button(eti, style="dark",text="Oferta 4x1", command=lambda: changeControl(2))
-        Of2=tb.Button(eti, style="dark",text="Oferta 2x1", command=lambda: changeControl(3))
-        Of1=tb.Button(eti, style="dark",text="Oferta 1x1", command=lambda: changeControl(4))
-        Etientrada= tb.Entry(eti, style="dark",width=10)
+                    self.datos_productos.sort(key= lambda x: (x[3] is None,x[3]))
+                    cargar_filas_desde_tuplas(self.datos_productos)
+                    changeControl(status=self.estado)
+                    if self.estado==1:
+                        desmarcar_columna(0)
+                    else:
+                        desmarcar_columna(1)
+                else:
+                    messagebox.showerror("error","Articulo NO registrado")
+                    return
+
+        def changeControl(status):
+        
+                if status==1:
+                    Rap.config(bootstyle="Success")
+                    Of1.config(bootstyle="dark")
+                    Of2.config(bootstyle="dark")
+                    Of4.config(bootstyle="dark")
+                    self.estado=1
+                    desmarcar_columna(1,0)
+                    desmarcar_columna(2,0)
+                    desmarcar_columna(3,0)
+                elif status==2:
+                    Rap.config(bootstyle="dark")
+                    Of1.config(bootstyle="Dark")
+                    Of2.config(bootstyle="Dark")
+                    Of4.config(bootstyle="Success")
+                    desmarcar_columna(0,0)
+                    self.estado=2
+                elif status==3:
+                    Rap.config(bootstyle="Dark")
+                    Of1.config(bootstyle="Dark")
+                    Of2.config(bootstyle="Success")
+                    Of4.config(bootstyle="Dark")
+                    desmarcar_columna(0,0)
+                    self.estado=3
+                elif status==4:
+                    Rap.config(bootstyle="dark")
+                    Of1.config(bootstyle="Success")
+                    Of2.config(bootstyle="Dark")
+                    Of4.config(bootstyle="Dark")
+                    desmarcar_columna(0,0)
+                    self.estado=4
+                if status==3 or status==2 or status==4:
+                    for row_frame in check_frame.winfo_children():
+                                for i, chk in enumerate(row_frame.winfo_children()):
+                                    if i == 0:
+                                        
+                                        chk.configure(state="disabled")
+                                        
+                                    else:
+                                        chk.configure(state="normal")
+                elif status==1:
+                    for row_frame in check_frame.winfo_children():
+                                for i, chk in enumerate(row_frame.winfo_children()):
+                                    if not i == 0:  
+                                        chk.configure(state="disabled")
+                                    else:
+                                        chk.configure(state="normal")
+        def actualizar_treeview():
+                for item_id, vars_list in check_dict.items():
+                    if any(var.get() for var in vars_list):  # Si al menos un Checkbutton está activado
+                        tree.item(item_id, tags=("seleccionado",))
+                    else:
+                        tree.item(item_id, tags=())
+        def cargar_filas_desde_tuplas(datos):
+                # Limpiar datos previos
+                tree.delete(*tree.get_children())  # Eliminar todas las filas del Treeview
+                for widget in check_frame.winfo_children():  # Destruir todos los Checkbuttons anteriores
+                    widget.destroy()
+                check_dict.clear()  # Reiniciar el diccionario de Checkbuttons
+
+                # Cargar nuevos datos
+                for producto in datos:
+                    precio = f"$ {producto[1]}" if producto[1] is not None else "$"
+                    precio1 = f"$ {producto[4]}" if producto[4] is not None else "$"
+                    precio2 = f"$ {producto[5]}" if producto[5] is not None else "$"
+                    precio3 = f"$ {producto[6]}" if producto[6] is not None else "$"
+                    descripcion = producto[2]
+                    opciones = producto[8:12]
+
+                    # Insertar fila en Treeview
+                    item_id = tree.insert("", "end", values=(descripcion, precio, precio1, precio2, precio3))
+
+                    # Crear Frame para checkboxes
+                    row_frame = tb.Frame(check_frame)
+                    row_frame.grid(row=len(check_dict), column=0, sticky="w")
+
+                    # Variables y checkboxes
+                    row_vars = []
+                    for i, texto_opcion in enumerate(opciones):
+                        var = tk.BooleanVar(value=False)
+                        row_vars.append(var)
+                        chk = tb.Checkbutton(
+                            row_frame, 
+                            text=texto_opcion,
+                            variable=var,
+                            command=actualizar_treeview
+                        )
+                        chk.pack(side="left", padx=5)
+                    
+                    check_dict[item_id] = row_vars
+
+                # Actualizar scroll y altura del treeview
+                tree["height"] = len(datos)
+                canvas.update_idletasks()
+                canvas.configure(scrollregion=canvas.bbox("all"))
+                actualizar_treeview()
+            # Cargar los datos al iniciar
+        def delete(x):
+                y=messagebox.askyesno("Borrar", "Desea limpiar etiquetas")
+                if y:
+                    self.Back.etiquetasSearch(x)
+                    limpiarPantalla()
+                else:
+                    pass
+        def obtener_productos_seleccionados():
+                try:
+                    if not tree.get_children():
+                        messagebox.showerror("error",'No hay productos para imprimir')
+                        return
+                    productos=[]
+                    c=0
+                    x=0
+                    for item_id, vars_list in check_dict.items():
+                        ejecutable=True
+                        c+=1
+                        estados = [var.get() for var in vars_list]
+
+                        nombre_producto = tree.item(item_id, "values")[0]  # Obtener el nombre en el Treeview
+                        
+                        for producto in self.datos_productos:
+                                
+                                if producto[2] == nombre_producto and ejecutable:
+                                    ejecutable=False
+                                    
+                                    if producto[12]:
+                                        Cunidad= producto[12]
+                                        unidad=producto[13] 
+                                        if producto[13]=="Unidad:":
+                                            unidad= 'unidad'
+                                        elif producto[13]=="gr":
+                                            unidad='Kg'
+                                            Cunidad=producto[12]/1000
+                                        elif producto[13]=="ml" or producto[13]=="m³":
+                                            unidad='Lt'
+                                            Cunidad=producto[12]/1000
+                                        elif producto[13]=="mg":
+                                            unidad="gr"
+                                            Cunidad=producto[12]/1000
+                                        else:
+                                            pass
+                                    else:
+                                        unidad= 'unidad'
+                                        Cunidad=1
+                                    if estados[0]:
+                                        value={"nombre": f"{producto[2]}", "precio": producto[1], "codigo": f"{producto[0]}","cunidad":Cunidad,"unidad": f"{unidad}","fecha":f"{producto[7]}"}
+                                        productos.append(value)  # Guardamos el nombre y los estados
+                                    if estados[1]:
+                                        value={"descripcion": f"{producto[2]}", "precio_anterior": (producto[1]*producto[9]),"precio":(producto[4]) , 
+                                        "codigo_barras": f"{producto[0]}","CantUni":Cunidad,"unidad": f"{unidad}","cant":producto[9]}
+                                        productos.append(value)
+                                    if estados[2]:
+                                        value={"descripcion": f"{producto[2]}", "precio_anterior": (producto[1]*producto[10]),"precio":(producto[5]) , 
+                                        "codigo_barras": f"{producto[0]}","CantUni":Cunidad,"unidad": f"{unidad}","cant":producto[10]}
+                                        productos.append(value)
+                                    if estados[3]:
+                                        value={"descripcion": f"{producto[2]}", "precio_anterior": (producto[1]*producto[11]),"precio":(producto[6]) , 
+                                        'codigo_barras': f"{producto[0]}","CantUni":Cunidad,"unidad": f"{unidad}","cant":producto[11]}
+                                        productos.append(value)
+                        
+                    if self.estado==1:                        
+                        self.eti(productos)
+                    elif self.estado==2:
+                        self.generar_oferta(productos=productos, disposicion="4x1")
+                    elif self.estado==3:
+                        self.generar_oferta(productos=productos, disposicion="2x1")
+                    elif self.estado==4:
+                        self.generar_oferta(productos=productos, disposicion="1x1")
+                except:
+                    messagebox.showerror("error","Chequee las elecciones")
+        
+        self.datos_productos=[]
+        self.etiF=tk.Frame(self.app,)
+        control=tk.StringVar(value="EtiR")
+        self.estado=1
+        self.etiF.place(relheight=1,relwidth=1,   relx=0,rely=0)
+        Rap=tb.Button(self.etiF, style="Success",text="Etiqueta Rapida", command=lambda: changeControl(1))
+        Of4=tb.Button(self.etiF, style="dark",text="Oferta 4x1", command=lambda: changeControl(2))
+        Of2=tb.Button(self.etiF, style="dark",text="Oferta 2x1", command=lambda: changeControl(3))
+        Of1=tb.Button(self.etiF, style="dark",text="Oferta 1x1", command=lambda: changeControl(4))
+        Etientrada= tb.Entry(self.etiF, style="dark",width=10)
         Etientrada.place(relheight=0.05,relwidth=0.4,relx=0.3,rely=0.9)
         Rap.place(relx=0., rely=0.2,relheight=0.05,relwidth=0.09)
         Of4.place(relx=0., rely=0.27,relheight=0.05,relwidth=0.09)
         Of2.place(relx=0., rely=0.34,relheight=0.05,relwidth=0.09)
         Of1.place(relx=0, rely=0.41,relheight=0.05,relwidth=0.09)
-        tb.Button(eti, style="dark",text="Buscar").place(relheight=0.05,relwidth=0.09,relx=0.75, rely=0.9)
-        main_frame = tk.Frame(eti)
+        # tb.Button(self.etiF, style="dark",text="Buscar",command=lambda :self.SearchByName(status=1)).place(relheight=0.05,relwidth=0.09,relx=0.8, rely=0.9)
+        main_frame = tk.Frame(self.etiF)
         main_frame.place(relx=0.1,relheight=0.65,relwidth=0.85,rely=0.1)
 
-        # Canvas para permitir desplazamiento
+            # Canvas para permitir desplazamiento
         canvas = tk.Canvas(main_frame)
         scrollbar = tb.Scrollbar(main_frame, orient="vertical", command=canvas.yview)
+            # Frame interno dentro del canvas
 
-        # Frame interno dentro del canvas
         scrollable_frame = tb.Frame(canvas)
         scrollable_frame.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
         canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
         canvas.configure(yscrollcommand=scrollbar.set)
 
-        # Frame para organizar Checkbuttons y Treeview
+            # Frame para organizar Checkbuttons y Treeview
         content_frame = tb.Frame(scrollable_frame)
         content_frame.pack(fill="both", expand=True)
 
-        # Frame para Checkbuttons (lado izquierdo)
+            # Frame para Checkbuttons (lado izquierdo)
         check_frame = tb.Frame(content_frame)
         check_frame.grid(row=0, column=0, sticky="nw", padx=5)
 
-        # Treeview (lado derecho)
+            # Treeview (lado derecho)
         tree =tb.Treeview(content_frame, columns=("data","Precion","Precio1","Precio2","Precio3"), show="tree", height=0)
-  
+
         tree.column("data", width=400, anchor="w")
         tree.column("Precion", width=80, anchor="center")
         tree.column("Precio1", width=80, anchor="center")
@@ -694,96 +914,30 @@ class main():
         tree.column("Precio3", width=80, anchor="center")
         tree.grid(row=0, column=1, columnspan=5, sticky="nwe", padx=1)
         tree.configure(selectmode="none")
-        # Diccionario para almacenar Checkbuttons vinculados con filas del Treeview
+            # Diccionario para almacenar Checkbuttons vinculados con filas del Treeview
         check_dict = {}
 
-        # Función para actualizar selección en el Treeview
-        def actualizar_treeview():
-            for item_id, vars_list in check_dict.items():
-                if any(var.get() for var in vars_list):  # Si al menos un Checkbutton está activado
-                    tree.item(item_id, tags=("seleccionado",))
-                else:
-                    tree.item(item_id, tags=())
-
-        # Configurar color de filas seleccionadas
+            # Función para actualizar selección en el Treeview
+            
+            # Configurar color de filas seleccionadas
         tree.tag_configure("seleccionado", background="green")
 
-    # Función modificada para cargar desde tuplas
-        def cargar_filas_desde_tuplas(datos):
-            # Limpiar datos previos
-            tree.delete(*tree.get_children())  # Eliminar todas las filas del Treeview
-            for widget in check_frame.winfo_children():  # Destruir todos los Checkbuttons anteriores
-                widget.destroy()
-            check_dict.clear()  # Reiniciar el diccionario de Checkbuttons
-
-            # Cargar nuevos datos
-            for producto in datos:
-                precio = f"$ {producto[1]}" if producto[1] is not None else "$"
-                precio1 = f"$ {producto[4]}" if producto[4] is not None else "$"
-                precio2 = f"$ {producto[5]}" if producto[5] is not None else "$"
-                precio3 = f"$ {producto[6]}" if producto[6] is not None else "$"
-                descripcion = producto[2]
-                opciones = producto[8:]
-
-                # Insertar fila en Treeview
-                item_id = tree.insert("", "end", values=(descripcion, precio, precio1, precio2, precio3))
-
-                # Crear Frame para checkboxes
-                row_frame = tb.Frame(check_frame)
-                row_frame.grid(row=len(check_dict), column=0, sticky="w")
-
-                # Variables y checkboxes
-                row_vars = []
-                for i, texto_opcion in enumerate(opciones):
-                    var = tk.BooleanVar(value=True)
-                    row_vars.append(var)
-                    chk = tb.Checkbutton(
-                        row_frame, 
-                        text=texto_opcion,
-                        variable=var,
-                        command=actualizar_treeview
-                    )
-                    chk.pack(side="left", padx=5)
-                
-                check_dict[item_id] = row_vars
-
-            # Actualizar scroll y altura del treeview
-            tree["height"] = len(datos)
-            canvas.update_idletasks()
-            canvas.configure(scrollregion=canvas.bbox("all"))
-            actualizar_treeview()
-        # Cargar los datos al iniciar
-        
-        # Empaquetar el canvas y el scrollbar
+        # Función modificada para cargar desde tuplas
+            
+            # Empaquetar el canvas y el scrollbar
         canvas.pack(side="left", fill="both", expand=True)
         scrollbar.pack(side="right", fill="y")
-        tb.Button(eti, style="success-outline",text= "Cargar Etiquetas", command= lambda: cargar(status=1)).place(relheight=0.05, relwidth=0.09, relx=0.2, rely=0.9)
-        tb.Button(eti, style= "success-outline",text= "Cargar Ofertas", command= lambda: cargar(status=2)).place(relheight=0.05, relwidth=0.09, relx=0.1, rely=0.9)
-        tb.Button(eti, style="dark",text= "Borrar Etiquetas", command= lambda: cargar(status=1)).place(relheight=0.05, relwidth=0.09, relx=0.9, rely=0.84)
-        tb.Button(eti, style= "dark",text= "Borrar Ofertas", command= lambda: cargar(status=1)).place(relheight=0.05, relwidth=0.09, relx=0.9, rely=0.9)
-        tb.Button(eti, style= "success-outline",text= "Limpiar Pantalla", command= lambda: limpiarPantalla()).place(relheight=0.05, relwidth=0.09, relx=0, rely=0.9)
-        tb.Button(eti, style= "dark",text= "Imprimir", command= lambda: obtener_productos_seleccionados()).place(relheight=0.05, relwidth=0.09, relx=0.8, rely=0.84)
-        def obtener_productos_seleccionados():
-                productos=[]
-                
-                for item_id, vars_list in check_dict.items():
-                    estados = [var.get() for var in vars_list]
-
-                    nombre_producto = tree.item(item_id, "values")[0]  # Obtener el nombre en el Treeview
-                    print(estados)
-                    print(nombre_producto)
-                    print(self.datos_productos)
-                    if estados[0]:
-                        # print("here")
-                        for producto in self.datos_productos:
-                            print(nombre_producto)
-                            if producto[2] == nombre_producto:
-                                print(nombre_producto)
-                                value={"nombre": f"{producto[2]}", "precio": f"${producto[1]}", "codigo": f"{producto[0]}",}
-                                productos.append(value)  # Guardamos el nombre y los estados
-                self.eti(productos)
-                print(productos)
+        tb.Button(self.etiF, style="success-outline",text= "Cargar Etiquetas", command= lambda: cargar(status=1)).place(relheight=0.05, relwidth=0.09, relx=0.2, rely=0.9)
+        tb.Button(self.etiF, style= "success-outline",text= "Cargar Ofertas", command= lambda: cargar(status=2)).place(relheight=0.05, relwidth=0.09, relx=0.1, rely=0.9)
+        tb.Button(self.etiF, style="dark",text= "Borrar Etiquetas", command= lambda: delete(3)).place(relheight=0.05, relwidth=0.09, relx=0.9, rely=0.84)
+        tb.Button(self.etiF, style= "dark",text= "Borrar Ofertas", command= lambda: delete(4)).place(relheight=0.05, relwidth=0.09, relx=0.9, rely=0.9)
+        tb.Button(self.etiF, style= "success-outline",text= "Limpiar Pantalla", command= lambda: limpiarPantalla()).place(relheight=0.05, relwidth=0.09, relx=0, rely=0.9)
+        tb.Button(self.etiF, style= "dark",text= "Imprimir", command= lambda: obtener_productos_seleccionados()).place(relheight=0.05, relwidth=0.09, relx=0.8, rely=0.84)
+            
+        self.app.bind("<Escape>",lambda event:self.etiF.destroy())
+        self.app.bind("<Return>", lambda event: entrada(event))
     def eti(self,productos):
+        
         PAGE_WIDTH, PAGE_HEIGHT = A4
         LABEL_WIDTH = 5.8 * cm
         LABEL_HEIGHT = 2.8 * cm
@@ -802,19 +956,10 @@ class main():
         ZONA_PRECIO = 1.55 * cm
         ZONA_CODIGO = 3.0 * cm
 
-        # productos = [
-        #     {"nombre": "Arcor mermelada 150gr", "precio": "$5999.99", "codigo": "7791274087615","cantidad": "1"},
-        #     {"nombre": "1234567890123456789456", "precio": "$5999.99", "codigo": "7791274087615"},
-        #     {"nombre": "1234567890123456789456", "precio": "$5999.99", "codigo": "7791274087615"},
-        #     {"nombre": "1234567890123456789456", "precio": "$5999.99", "codigo": "7791274087615"},
-        #     {"nombre": "1234567890123456789456", "precio": "$5999.99", "codigo": "7791274087615"},
-        #     {"nombre": "1234567890123456789456", "precio": "$5999.99", "codigo": "7791274087615"},
-        #     {"nombre": "1234567890123456789456", "precio": "$59999.99", "codigo": "7791274087615"},
-        # ]
         def generar_codigo_barras(codigo):
                 # Obtener clase EAN-13
                 ean = barcode.get_barcode_class("ean13")
-
+                
                 # Verificar si el último dígito es correcto
                 ean_temp = ean(codigo[:-1])  # Usamos solo los primeros 12 dígitos
                 codigo_generado = ean_temp.get_fullcode()  # Obtiene los 13 dígitos con checksum
@@ -855,22 +1000,22 @@ class main():
         # Precio (centro destacado)
                 c.setFont(NOMBRE_FUENTE , 8)
                 c.drawCentredString(
-                    x + LABEL_WIDTH-0.7*cm,
+                    x + LABEL_WIDTH-0.8*cm,
                     y +ESPACIADO ,
-                    "22/05/24"
+                    producto["fecha"]
                 )
                 c.setFont(NOMBRE_FUENTE, 8)
                 c.drawCentredString(
                     x + LABEL_WIDTH/2+0.2*cm,
                     y +ESPACIADO ,
-                    "$49888.98 xLt"
+                    f"{format((producto["cunidad"]*producto["precio"]),",.2f")} xLt"
                 )
                 # Precio (centro destacado)
                 c.setFont(NOMBRE_FUENTE + "-Bold", TAMANO_PRECIO)
                 c.drawCentredString(
                     x + LABEL_WIDTH/2,
                     y + LABEL_HEIGHT - ZONA_PRECIO,
-                    producto["precio"]
+                    f"$ {format(producto["precio"],",.2f")}"
                 )
 
                 # Código de barras (parte inferior)
@@ -893,9 +1038,9 @@ class main():
                 os.remove(codigo_img)
             
             c.save()
-            print("PDF generado correctamente")
         crear_etiquetas()
-        def abrir_pdf(ruta_archivo):
+        self.abrir_pdf("etiquetas_precios.pdf")
+    def abrir_pdf(self,ruta_archivo):
     # Para Windows
             if os.name == 'nt':
                 os.startfile(ruta_archivo)
@@ -905,6 +1050,187 @@ class main():
                 subprocess.run([opener, ruta_archivo])
 
         # Ejemplo de uso
-        abrir_pdf("etiquetas_precios.pdf")
+        
+    def generar_oferta(self,productos, disposicion, nombre_archivo=
+                        "ofertas.pdf"):
+        def formatear_float(num):
+            return str(num).rstrip('0').rstrip('.') if '.' in str(num) else str(num)
+        # Configurar disposición y orientación
+        if disposicion == "1x1" :
+            ancho, alto = landscape(A4)
+            state=1.5  # Apaisado
+        elif  disposicion == "4x1":
+            ancho, alto = landscape(A4) 
+            state=1
+        else:
+            state=1.2
+            ancho, alto = A4  # Vertical
+        tamanio_fuente = {
+            '1x1': {'titulo': 38, 'precio': 48, 'normal': 15},
+            '2x1': {'titulo': 30, 'precio': 38, 'normal': 14},
+            '4x1': {'titulo': 22, 'precio': 30, 'normal': 8}
+        }[disposicion]
+        margen = 1 * cm                                     
+        estilos = {
+            'titulo': ParagraphStyle(
+                name='Titulo', 
+                fontSize=tamanio_fuente["titulo"], 
+                textColor=black, 
+                leading=29,  # Aumentar leading para evitar solapamiento
+                alignment=TA_CENTER  # Alineación centrada
+            ),
+            'precio': ParagraphStyle(
+                name='Precio',
+                fontSize=tamanio_fuente["precio"],
+                textColor=black,
+                leading=22,
+                alignment=TA_CENTER  # Alineación centrada
+            ),
+            'normal': ParagraphStyle(
+                name='Normal',
+                fontSize=tamanio_fuente['normal'],
+                textColor=black,
+                leading=20,
+                alignment=TA_CENTER  # Alineación centrada
+            ),
+            'other': ParagraphStyle(
+                name='other',
+                fontSize=tamanio_fuente['normal'],
+                textColor=black,
+                leading=10,
+                # Alineación centrada
+            ),
+            'other1': ParagraphStyle(
+                name='other1',
+                fontSize=tamanio_fuente['normal'],
+                textColor=black,
+                leading=12,
+                alignment=TA_RIGHT
+                # Alineación centrada
+            )
+        }
+
+        # Configurar disposición
+        if disposicion == "1x1":
+            columnas, filas = 1, 1
+        elif disposicion == "2x1":
+            columnas, filas = 1, 2  # Una columna, dos filas (una debajo de la otra)
+        elif disposicion == "4x1":
+            columnas, filas = 2, 2  # Dos columnas, dos filas (apaisado)
+        else:
+            raise ValueError("Disposición no válida: usar 1x1, 2x1 o 4x1")
+
+        ancho_etiqueta = (ancho - 2 * margen) / columnas
+        alto_etiqueta = (alto - 2 * margen) / filas
+
+        c = canvas.Canvas(nombre_archivo, pagesize=(ancho, alto))
+
+        for i, producto in enumerate(productos):
+            col = i % columnas
+            fila = (i // columnas) % filas
+
+            if i % (columnas * filas) == 0 and i != 0:
+                c.showPage()
+
+            x = margen + col * ancho_etiqueta
+            y = alto - margen - (fila + 1) * alto_etiqueta
+
+            # Marco de la etiqueta
+            c.rect(x, y, ancho_etiqueta, alto_etiqueta)
+
+            # Contenido
+        
+
+            current_y = y + alto_etiqueta - 0.5 * cm
+            oferta = Paragraph(f"<b><u>OFERTA</u></b>", estilos['precio'])
+            oferta.wrapOn(c, ancho_etiqueta - 1 * cm, alto_etiqueta)
+            x_pos = x + (ancho_etiqueta - oferta.width) / 2  # Centrado horizontal
+            oferta.drawOn(c, x_pos, y + alto_etiqueta - (0.5 * cm*state) - oferta.height)
+
+            # 2. Descripción del producto
+            descripcion = Paragraph(producto['descripcion'], estilos['titulo'])
+            descripcion.wrapOn(c, ancho_etiqueta - 1 * cm, alto_etiqueta)
+            x_pos = x + (ancho_etiqueta - descripcion.width) / 2
+            descripcion.drawOn(c, x_pos, y + alto_etiqueta - (1.9 * cm*state) - descripcion.height)
+
+            # 3. Precio actual
+            if producto["cant"]==1: 
+                precio_actual = Paragraph(f"Ahora: <b> ${format((producto['precio']*producto['cant']),",.2f")}</b>", estilos['precio'])
+            else:
+                precio_actual = Paragraph(f"Ahora: <b>{producto['cant']}x ${format((producto['precio']*producto['cant']),",.2f")}</b>", estilos['precio'])
+            precio_actual.wrapOn(c, ancho_etiqueta - 1 * cm, alto_etiqueta)
+            x_pos = x + (ancho_etiqueta - precio_actual.width) / 2
+            precio_actual.drawOn(c, x_pos, y + alto_etiqueta - (4.5 * cm*state) - precio_actual.height)
+
+            # 4. Precio anterior tachado
+            precio_anterior = Paragraph(f"<b>Antes:</b> $ {format(producto['precio_anterior'],",.2f")}", estilos['other'])
+            precio_anterior.wrapOn(c, ancho_etiqueta - 1 * cm, alto_etiqueta)
+            x_pos = x + 5*cm+(ancho_etiqueta - precio_anterior.width) / 2
+            precio_anterior.drawOn(c, x_pos, y + alto_etiqueta - (6.5 * cm*state) - precio_anterior.height)
+            
+            # 5. Precio por litro
+            uni= producto['unidad'] if not producto['unidad']== 'Unidad:' else 'unidad'
+            if producto["cant"]==1:
+                precio_litro = Paragraph(f"Precio por {producto['unidad']}: $ {format((producto['CantUni']*producto["precio"]), ",.2f")}", estilos['other'])
+            else:
+                precio_litro = Paragraph(f"Precio por Unidad: $ {format(producto["precio"], ",.2f")}", estilos['other'])
+            precio_litro.wrapOn(c, ancho_etiqueta - 1 * cm, alto_etiqueta)
+            x_pos = x + 0.5 * cm  # Alineado a la izquierda
+            precio_litro.drawOn(c, x_pos, y + 1 * cm)
+
+            # 6. Código de barras numérico (alineado a la derecha)
+            codigo = Paragraph(f"Art: {producto['codigo_barras']}", estilos['other1'])
+            codigo.wrapOn(c, ancho_etiqueta - 1 * cm, alto_etiqueta)
+            x_pos = x + ancho_etiqueta - codigo.width - 0.5 * cm  # Alineado a la derecha
+            codigo.drawOn(c, x_pos, y + 1 * cm)
+            # Código de barras
+
+
+        c.save()
+        self.abrir_pdf("ofertas.pdf")
+
+
+    # Ejemplo de uso
+    productos = [
+        {
+            'titulo': '',
+            'descripcion': 'Extra virgen 1L botella vidrio',
+            'precio': '6.99',
+            'precio_anterior': '8.99',
+            'precio_litro': '6.99',
+            'codigo_barras': '123456789012',
+            'unidad':'Unidad:',
+            'CantUni':'350',
+            "cant":1
+        },
+        {
+            'titulo': '',
+            'descripcion': 'Leche Entera Pack Pack de 6 boewewtellas de 1L',
+            'precio': '11,999.99',
+            'precio_anterior': '5.99',
+            'precio_litro': '0.75',
+            'codigo_barras': '987654321098'
+        },
+        {
+            'titulo': 'Leche Entera',
+            'descripcion': 'Pack de 6 botellas de 1L',
+            'precio': '4499.99',
+            'precio_anterior': '5.99',
+            'precio_litro': '0.75',
+            'codigo_barras': '987654321098'
+        },
+        {
+            'titulo': 'Leche Entera',
+            'descripcion': 'Pack de 6 botellas de 1L',
+            'precio': '3999.99',
+            'precio_anterior': '299925.99',
+            'precio_litro': '0.75',
+            'codigo_barras': '987654321098'
+        },
+        # Agrega más productos según necesites
+    ]
+
+    # disposicion = input("Elige disposición (1x1, 2x1, 4x1): ").strip().lower()
+
 main()
         

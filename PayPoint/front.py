@@ -116,7 +116,7 @@ class caja():
             self.detalles.pack(side="left", fill="both", expand=True)
             scrollbar.pack(side="right", fill="y")
             self.total = tb.Label(self.app,
-                                text=f"$ {self.Bend.subtotal:.2f}",
+                                text=f"$ {format(self.Bend.subtotal, ",.2f")}",
                                 font=("arial", int(80 * self.Bend.font)),
                                 relief="solid",
                                 borderwidth=20,
@@ -347,26 +347,26 @@ class caja():
                 if result[x]: net += f"{result[x]} "
             if status==0:
                 if cantOf:
-                    self.detalles.insert('', 'end', values=(f"{cantOf}", f"{net}",f'$ {price:.2f}', f"$ {value:.2f}"))
+                    self.detalles.insert('', 'end', values=(f"{cantOf}", f"{net}",f'$ {format(price, ",.2f")}', f"$ {format(value, ",.2f")}"))
                     self.Bend.suma(Descripcion=f"{net}", Precio=price, Plu=f"{codigo}", Cantidad=cantOf, cantOF=of)
                 else:
-                    self.detalles.insert('', 'end', values=(f"{mult}", f"{net}",f'$ {price:.2f}', f"$ {value:.2f}"))
+                    self.detalles.insert('', 'end', values=(f"{mult}", f"{net}",f'$ {format(price, ",.2f")}', f"$ {format(value, ",.2f")}"))
                     self.Bend.suma(Descripcion=f"{net}", Precio=price, Plu=f"{codigo}", Cantidad=mult, cantOF=of)
-                self.total.config(text=f'$ {self.Bend.subtotal:.2f}')
+                self.total.config(text=f'$ {format(self.Bend.subtotal, ",.2f")}')
                 self.cantidad.config(text=f'{self.Bend.cant}')
             elif status==1 and resto==0:
                 if extra:
                     self.Pitem.config(text= f"PROMO {net} x{mult+extra}")    
                 else:
                     self.Pitem.config(text= f"{net} x{mult+extra}")    
-                self.Pprice.config(text= f"$ {(value+values):.2f}")
+                self.Pprice.config(text= f"$ {format((value+values),",.2f")}")
             elif status==2:
                 if cantOf:
-                    self.detalles.insert('', 'end', values=(f"- {cantOf}", f"{net}",f'- $ {price:.2f}', f"- $ {value:.2f}"))
+                    self.detalles.insert('', 'end', values=(f"- {cantOf}", f"{net}",f'- $ {format(price, ",.2f")}', f"- $ {format(value, ",.2f")}"))
                 else:
-                    self.detalles.insert('', 'end', values=(f"- {mult}", f"{net}",f'- $ {price:.2f}', f"- $ {value:.2f}"))
+                    self.detalles.insert('', 'end', values=(f"- {mult}", f"{net}",f'- $ {format(price, ",.2f")}', f"- $ {format(value, ",.2f")}"))
                 self.Bend.suma(Descripcion=f"{net}", Precio=price, Plu=f"{codigo}", Cantidad=(mult*(-1)))
-                self.total.config(text=f'$ {self.Bend.subtotal:.2f}')
+                self.total.config(text=f'$ {format(self.Bend.subtotal, ",.2f")}')
                 self.cantidad.config(text=f'{self.Bend.cant}')
             if resto and (status==0 or status==2):
                 self.items(Re=f"{resto}*{codigo}",status=status)
@@ -459,22 +459,22 @@ class caja():
         else:
             value = mult * codigo
             if status==0:
-                self.detalles.insert('', 'end', values=(f"{mult}", f"{type}",f"$ {codigo:.2f}", f"$ {value:.2f}"))
+                self.detalles.insert('', 'end', values=(f"{mult}", f"{type}",f"$ {format(codigo,",.2f")}", f"$ {format(value,",.2f")}"))
                 self.Bend.suma(Descripcion=f"{type}", Cantidad=mult,  Precio=codigo, Plu='11111111')
-                self.total.config(text=f'$ {self.Bend.subtotal:.2f}')
+                self.total.config(text=f'$ {format(self.Bend.subtotal,",.2f")}')
                 self.cantidad.config(text=f'{self.Bend.cant}')
             elif status==1:
                 self.Pitem.config(text= f"{type} x{mult}")    
-                self.Pprice.config(text= f"$ {value:.2f}")
+                self.Pprice.config(text= f"$ {format(value,",.2f")}")
             elif status==2:
                 resultados = [item for item in self.Bend.internal if (item[0] == type and item[1]==codigo)]
                 sumainterna=0
                 for values in resultados:
                     sumainterna+= values[3]
                 if resultados and sumainterna>=mult:
-                    self.detalles.insert('', 'end', values=(f"- {mult}", f"{type}",f"- $ {codigo:.2f}", f"- $ {value:.2f}"))
+                    self.detalles.insert('', 'end', values=(f"- {mult}", f"{type}",f"- $ {format(codigo,",.2f")}", f"- $ {format(value,",.2f")}"))
                     self.Bend.suma(Descripcion=f"{type}", Cantidad=(mult*(-1)),  Precio=codigo, Plu='11111111')
-                    self.total.config(text=f'$ {self.Bend.subtotal:.2f}')
+                    self.total.config(text=f'$ {format(self.Bend.subtotal,",.2f")}')
                     self.cantidad.config(text=f'{self.Bend.cant}')
                    
                     self.Bend.internal = [t for t in self.Bend.internal if not (t[0]==type and t[1]== codigo)]
@@ -551,7 +551,7 @@ class caja():
                                         font=("arial", int(25 * self.Bend.font)), justify='center',width=3)
         R_total = tb.Label(self.resume, text='Total:', background='#F1EAD7', foreground='#847C67',
                            font=("arial", int(70 * self.Bend.font)))
-        self.R_total_valor = tb.Label(self.resume, text=f'$ {self.Bend.subtotal:.2f}',
+        self.R_total_valor = tb.Label(self.resume, text=f'$ {format(self.Bend.subtotal, ",.2f")}',
                                  font=('arial', int(70 * self.Bend.font)), background='#F1EAD7',
                                  foreground='#847C67')
         R_bonificacion = tb.Label(self.resume, text='Bonificación %',
@@ -675,16 +675,16 @@ class caja():
                 numero2=contenido[1:]
                 if numero2.replace(".", "", 1).isdigit() and numero2.count(".") < 2:
                     widget.delete(0, tk.END)  
-                    widget.insert(0, f"$ {float(numero2):.2f}") 
+                    widget.insert(0, f"$ {format(float(numero2),",.2f")}") 
                 else:
                     if numero.replace(".", "", 1).isdigit() and numero.count(".") < 2:
                         widget.delete(0, tk.END)  
-                        widget.insert(0, f"$ {float(numero):.2f}")
+                        widget.insert(0, f"$ {format(float(numero2),",.2f")}")
                     else:
                         widget.delete(0, tk.END)  
             elif contenido.isdigit() or (contenido.replace(".", "", 1).isdigit() and contenido.count(".") < 2):
                 widget.delete(0, tk.END)  
-                widget.insert(0, f"$ {float(contenido):.2f}") 
+                widget.insert(0, f"$ {format(float(numero2),",.2f")}") 
             else:
                 widget.delete(0, tk.END)
             self.R_suma=0
@@ -693,8 +693,8 @@ class caja():
                 result= float(val[2:]) if not val == "" else 0
                 self.R_suma+= result
             R_vueltos= self.R_suma - self.Bend.subtotal
-            self.R_vuelto_valor.config(text= f"$ {R_vueltos:.2f}")
-            self.R_monto_valor.config(text= f"$ {self.R_suma:.2f}")
+            self.R_vuelto_valor.config(text= f"$ {format(R_vueltos,",.2f")}")
+            self.R_monto_valor.config(text= f"$ {format(self.R_suma,',.2f')}")
 
     def resumeBind(self):
         def bon(event=0):
@@ -706,9 +706,9 @@ class caja():
                 boni=0
             porcentaje= 100+rec-boni
             value=(porcentaje*self.Bend.subtotal)/100
-            self.R_total_valor.config(text= f"$ {value:.2f}")
+            self.R_total_valor.config(text= f"$ {format(value, ",.2f")}")
             if not value== self.Bend.subtotal:
-                tb.Label(self.resume, text=f'Subtotal:  $ {self.Bend.subtotal:.2f}',
+                tb.Label(self.resume, text=f'Subtotal:  $ {format(self.Bend.subtotal, ",.2f")}',
                                   font=('arial', int(30 * self.Bend.font)), background='#F1EAD7',
                                   foreground='#847C67').place(relx=0.54, rely=0.35)
         self.R_efectivo_valor.bind("<Return>", lambda event : self.enter_as_tab(event))
@@ -744,7 +744,7 @@ class caja():
             self.Bend.suma(refresh=1)
             self.detalles.delete(*self.detalles.get_children())
             self.cantidad.config(text= f'{self.Bend.cant}')
-            self.total.config(text=f'$ {self.Bend.subtotal:.2f}')
+            self.total.config(text=f'$ {format(self.Bend.subtotal, ",.2f")}')
         elif status==0:
             content=self.entrada.get()
             position = content.find('*')  # Encuentra la posición del asterisco

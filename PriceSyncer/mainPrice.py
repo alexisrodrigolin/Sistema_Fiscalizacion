@@ -303,7 +303,8 @@ class main():
     def save(self,status=0):
         command= []
         precio= self.P_precio_value.get()
-        dic={'Precio':f'{precio[2:]}'}
+        pprecio=precio[2:].replace(",","")
+        dic={'Precio':f'{pprecio}'}
 
         for x in range(len(self.orden)):
             com=getattr(self, f'P_{self.orden[x]}_value')
@@ -311,7 +312,7 @@ class main():
             if not (command[x]== '' or x==2 or x==14 or x==16 or x==18):
                 dic.update({f'{self.colsql[x]}':f'{command[x]}'})
             elif (not command[x]== '') and (x==14 or x==16 or x==18):
-                dic.update({f'{self.colsql[x]}':f'{command[x][2:]}'})  
+                dic.update({f'{self.colsql[x]}':f'{command[x][2:].replace(",","")}'})  
             elif command[x]=='':
                 dic.update({f'{self.colsql[x]}':'NULL'})
         dic.update({'Fecha_de_modificacion': f'{date.today()}'})

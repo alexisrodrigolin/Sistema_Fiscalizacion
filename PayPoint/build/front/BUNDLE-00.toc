@@ -1,3 +1,0 @@
-([('front',
-   '/Users/rok/Documents/project/Sistema de Fiscalizacion/PayPoint/dist/front',
-   'EXECUTABLE')],)

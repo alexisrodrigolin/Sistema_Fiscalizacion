@@ -1,6 +1,6 @@
 
 import mysql.connector as sql
-# import win32com.client as winc
+import win32com.client as winc
 import json
 class Logic:
     def __init__(self):
@@ -100,6 +100,7 @@ class Logic:
                     print("Error: no se pudo abrir el puerto serial %d" % self.comnum)
                     exit()
         except:
+            print("error")
             return "Error de Comunicación"
         try:
             drv.IFOpBegin("DocumentoEnCurso")
@@ -214,6 +215,16 @@ class Logic:
                 drv.IFOpBegin("ImprimirInformacion")
                 if not drv.IFOpSend(1):
                     self.cmd_error("ImprimirInformacion",drv)
+                
+            elif command=="cola":
+                print("ImprimirInformacion")
+                drv.IFOpBegin("EstablecerEncabezadoCola")
+                drv.IFOpParamIntSet("Numero", 11)
+                drv.IFOpParamSet("Texto", 'Gracias por su compra')
+
+                if not drv.IFOpSend(1):
+                    self.cmd_error("EstablecerEncabezadoCola",drv)
+                print("ds")
             elif command == "z": # Cierre Z
                 print("CierreZ")
                 drv.IFOpBegin("CierreZ")
@@ -262,6 +273,7 @@ class Logic:
                 if not drv.IFOpSend(1):
                     self.cmd_error("AbrirTique",drv)
                     exit()
+
                 for x in self.tique:
                     if x[3]<0:
                         drv.IFOpBegin("ItemRetorno")
@@ -283,6 +295,7 @@ class Logic:
                         if not drv.IFOpSend(1):
                             self.cmd_error("ItemVenta",drv)
                             exit()
+
                 if extra:
                     drv.IFOpBegin("DescuentoGeneral")
                     drv.IFOpParamSet("Descripcion", "Bonificación:")
@@ -296,7 +309,23 @@ class Logic:
                     drv.IFOpParamFloatSet("Monto", extra1)  
                     if not drv.IFOpSend(1):
                         self.cmd_error("RecargoGeneral",drv)
-                        exit()             
+                        exit()      
+
+
+
+                drv.IFOpBegin("SubtotalInfo")
+                if not drv.IFOpSend(1):
+                    self.cmd_error("Subtotal",drv)
+                    exit()
+                S_Total=drv.IFOpRetFloatGet("Total")
+                S_IVA=drv.IFOpRetFloatGet("IVA")
+                print(f"ss{S_Total}")
+                drv.IFOpBegin("TextoFiscal")
+                drv.IFOpParamSet("Texto", 'ijijijijijijijijijijijijijijij')
+                if not drv.IFOpSend(1):
+                    self.cmd_error("Texto",drv)
+                    exit()
+
                 print("Cerrar")
                 drv.IFOpBegin("Cerrar")
                 if not drv.IFOpSend(1):
@@ -395,4 +424,5 @@ class Logic:
             return  drv.IFOpErrorDescGet()
         finally:
             drv.SerialPortClose()
+
 Logic()

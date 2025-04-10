@@ -663,6 +663,7 @@ class caja():
                         self.items(status=2,Re=f"{items[3]*(-1)}*{items[2]}")
 
     def sim(self,status, event=0):  
+            
             if status ==1:
                 widget= self.R_efectivo_valor
             elif status== 2: 
@@ -684,7 +685,7 @@ class caja():
                         widget.delete(0, tk.END)  
             elif contenido.isdigit() or (contenido.replace(".", "", 1).isdigit() and contenido.count(".") < 2):
                 widget.delete(0, tk.END)  
-                widget.insert(0, f"$ {format(float(numero2),',.2f')}") 
+                widget.insert(0, f"$ {format(float(contenido ),',.2f')}") 
             else:
                 widget.delete(0, tk.END)
             self.R_suma=0

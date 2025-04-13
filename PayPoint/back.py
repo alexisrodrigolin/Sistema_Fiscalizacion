@@ -1,15 +1,18 @@
-
 import mysql.connector as sql
 import win32com.client as winc
 import json
+import os
+
 class Logic:
     def __init__(self):
-        with open("Configuration.json", "r") as archivo:
+        config_path = os.path.join(os.path.dirname(__file__), "Configuration.json")
+        with open(config_path, "r") as archivo:
             self.datos = json.load(archivo)
         self.font= float(self.datos['Font'])
 
     def writeCfg(self):
-        with open("Configuration.json","w") as archivo:
+        config_path = os.path.join(os.path.dirname(__file__), "Configuration.json")
+        with open(config_path, "w") as archivo:
             json.dump(self.datos,archivo, indent=4)
     def Conection(self):
 
@@ -88,8 +91,8 @@ class Logic:
         errdesc = drv.IFOpErrorDescGet()
         print("Error %d en comando %s: %s" % (err, cmdname, errdesc))
         exit()
-    def main(self,command,status=0, extra=0, extra1=0, event=0):
-
+    def main(self,command,status=0, extra=0, extra1=0, event=0, iva=0):
+        
         drv = winc.Dispatch("Sam4sFiscalDriver.Sam4sFiscalDriver")
         try:
             if not drv.SerialBaudSet(self.baudrate):
@@ -216,15 +219,7 @@ class Logic:
                 if not drv.IFOpSend(1):
                     self.cmd_error("ImprimirInformacion",drv)
                 
-            elif command=="cola":
-                print("ImprimirInformacion")
-                drv.IFOpBegin("EstablecerEncabezadoCola")
-                drv.IFOpParamIntSet("Numero", 11)
-                drv.IFOpParamSet("Texto", 'Gracias por su compra')
 
-                if not drv.IFOpSend(1):
-                    self.cmd_error("EstablecerEncabezadoCola",drv)
-                print("ds")
             elif command == "z": # Cierre Z
                 print("CierreZ")
                 drv.IFOpBegin("CierreZ")
@@ -267,7 +262,55 @@ class Logic:
                 print(" MontoIVACredito: %f" % drv.IFOpRetFloatGet("MontoIVACredito"))
                 print(" MontoOtrosTributosCredito: %f" % drv.IFOpRetFloatGet("MontoOtrosTributosCredito"))
             elif command == "tique": 
-                
+                iva_s= format(iva, '.2f')
+                l=25-len(iva_s)
+                x= "-"
+                drv.IFOpBegin("EstablecerEncabezadoCola")
+                drv.IFOpParamIntSet("Numero", 11)
+                drv.IFOpParamSet("Texto", 40*x)
+                if not drv.IFOpSend(1):
+                    self.cmd_error("EstablecerEncabezadoCola",drv)
+                drv.IFOpBegin("EstablecerEncabezadoCola")
+                drv.IFOpParamIntSet("Numero", 12)
+                drv.IFOpParamSet("Texto", "REGIMEN DE TRANSPARENCIA FISCAL AL")
+                if not drv.IFOpSend(1):
+                    self.cmd_error("EstablecerEncabezadoCola",drv)
+                drv.IFOpBegin("EstablecerEncabezadoCola")
+                drv.IFOpParamIntSet("Numero", 13)
+                drv.IFOpParamSet("Texto", "CONSUMIDOR (LEY 27.743)")
+                if not drv.IFOpSend(1):
+                    self.cmd_error("EstablecerEncabezadoCola",drv)
+                drv.IFOpBegin("EstablecerEncabezadoCola")
+                drv.IFOpParamIntSet("Numero", 14)
+                drv.IFOpParamSet("Texto", f"IVA CONTENIDO{l*' '}$ {iva_s}")
+                if not drv.IFOpSend(1):
+                    self.cmd_error("EstablecerEncabezadoCola",drv)
+                drv.IFOpBegin("EstablecerEncabezadoCola")
+                drv.IFOpParamIntSet("Numero", 15)
+                drv.IFOpParamSet("Texto", "OTROS IMPUESTOS NACIONALES INDIRECTOS")
+                if not drv.IFOpSend(1):
+                    self.cmd_error("EstablecerEncabezadoCola",drv)
+                drv.IFOpBegin("EstablecerEncabezadoCola")
+                drv.IFOpParamIntSet("Numero", 16)
+                drv.IFOpParamSet("Texto", "Imp. Internos Importados          $ 0.00")
+                if not drv.IFOpSend(1):
+                    self.cmd_error("EstablecerEncabezadoCola",drv)
+                drv.IFOpBegin("EstablecerEncabezadoCola")
+                drv.IFOpParamIntSet("Numero", 17)
+                drv.IFOpParamSet("Texto", 'LOS IMPUESTOS INFORMADOS SON SOLO LOS')
+                if not drv.IFOpSend(1):
+                    self.cmd_error("EstablecerEncabezadoCola",drv)
+                drv.IFOpBegin("EstablecerEncabezadoCola")
+                drv.IFOpParamIntSet("Numero", 18)
+                drv.IFOpParamSet("Texto", 'QUE CORRESPONDEN A NIVEL NACIONAL')
+                if not drv.IFOpSend(1):
+                    self.cmd_error("EstablecerEncabezadoCola",drv)
+                drv.IFOpBegin("EstablecerEncabezadoCola")
+                drv.IFOpParamIntSet("Numero", 19)
+                drv.IFOpParamSet("Texto", 40*x)
+                if not drv.IFOpSend(1):
+                    self.cmd_error("EstablecerEncabezadoCola",drv)
+    
                 print("AbrirTique")
                 drv.IFOpBegin("AbrirTique")
                 if not drv.IFOpSend(1):
@@ -311,20 +354,6 @@ class Logic:
                         self.cmd_error("RecargoGeneral",drv)
                         exit()      
 
-
-
-                drv.IFOpBegin("SubtotalInfo")
-                if not drv.IFOpSend(1):
-                    self.cmd_error("Subtotal",drv)
-                    exit()
-                S_Total=drv.IFOpRetFloatGet("Total")
-                S_IVA=drv.IFOpRetFloatGet("IVA")
-                print(f"ss{S_Total}")
-                drv.IFOpBegin("TextoFiscal")
-                drv.IFOpParamSet("Texto", 'ijijijijijijijijijijijijijijij')
-                if not drv.IFOpSend(1):
-                    self.cmd_error("Texto",drv)
-                    exit()
 
                 print("Cerrar")
                 drv.IFOpBegin("Cerrar")

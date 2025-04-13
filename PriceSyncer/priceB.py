@@ -2,9 +2,12 @@ import mysql.connector as sql
 from datetime import date
 import json
 from mysql.connector import Error
+import os
+
 class connection():
     def __init__(self):
-        with open("PriceConfiguration.json", "r") as archivo:
+        config_path = os.path.join(os.path.dirname(__file__), "PriceConfiguration.json")
+        with open(config_path, "r") as archivo:
             self.datos = json.load(archivo)
         self.font= float(self.datos['Font'])
     def Connection(self):

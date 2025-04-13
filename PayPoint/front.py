@@ -143,6 +143,7 @@ class caja():
         
             button2 = tb.Button(self.app, bootstyle="info", text="Cancelar",command=lambda: self.password(status=1))
             button2.place(relx=0.9, rely=0.32, relheight=0.07, relwidth=0.1)
+            
      
             button3 = tb.Button(self.app, bootstyle="info", text="Anular", command=lambda: self.password(status=0))
             button3.place(relx=0.9, rely=0.39, relheight=0.07, relwidth=0.1)
@@ -409,7 +410,7 @@ class caja():
         cont.pack(pady=20)
         cont.focus_set()
         self.app.bind("<Escape>", lambda event: (self.ppbind(event), self.passw.destroy()))
-    def precio(self,event):
+    def precio(self,event=0):
         color= 'grey'
         self.Precio=tk.Frame(self.app)
         self.Precio.config(background=color)
@@ -691,7 +692,7 @@ class caja():
             self.R_suma=0
             for x in (self.R_efectivo_valor, self.R_PagoElec_valor, self.R_tarjeta_valor):
                 val=x.get()
-                result= float(val[2:]) if not val == "" else 0
+                result= float(val[2:].replace(',','')) if not val == "" else 0
                 self.R_suma+= result
             R_vueltos= self.R_suma - self.Bend.subtotal
             self.R_vuelto_valor.config(text= f"$ {format(R_vueltos,',.2f')}")
@@ -724,22 +725,27 @@ class caja():
         self.app.bind("<F4>", lambda event: (self.resume.destroy(), self.ppbind(),self.call("tique", event)))
         self.app.bind("<Escape>", lambda event: (self.resume.destroy(), self.ppbind()))
     def call(self, command,extra=0, extra1=0, event=0):
-        result= self.Bend.main(f"{command}", extra, extra1) if extra1 else self.Bend.main(f"{command}")
-        if command== "tique":
+        if command == 'tique':
             if self.R_suma >= self.Bend.subtotal:
+                iva = self.Bend.subtotal * 0.21
+                result = self.Bend.main(f"{command}", extra, extra1, iva=iva) if extra1 else self.Bend.main(f"{command}", iva=iva)
+                
                 if not result:
                     self.cancelar_anular(status=1)
                 else:
-                    self.mostrar_error(f"{result}",2) 
-            else: 
-                self.mostrar_error("El Monto es menor al Total",2)
+                    self.mostrar_error(f"{result}", 1)
+            else:
+                self.mostrar_error("El Monto es menor al Total", 1)
+        else:
+            result = self.Bend.main(f"{command}", extra, extra1) if extra1 else self.Bend.main(f"{command}")
 
-        elif command== "z" or command=="x":
-            if result: self.mostrar_error(f"{result}",3)
+            if command == 'z' or command == 'x':
+                if result:
+                    self.mostrar_error(f"{result}", 3)
 
-        elif command== 'AuditoriaDZ' or command=='AuditoriaDF'or command=='AuditoriaF'or command=='AuditoriaZ':
-            if result: self.mostrar_error(f"{result}",4)
-
+            elif command in ['AuditoriaDZ', 'AuditoriaDF', 'AuditoriaF', 'AuditoriaZ']:
+                if result:
+                    self.mostrar_error(f"{result}", 4)
     def cancelar_anular(self, status, event=0):
         if status ==1:
             self.Bend.suma(refresh=1)
@@ -957,6 +963,6 @@ class caja():
         S_fecha.insert(0, f'{date.today()}')
         F_fecha.insert(0, f'{date.today()}')
 
-
+ 
 
 caja()

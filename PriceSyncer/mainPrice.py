@@ -970,8 +970,6 @@ class main():
                 else:
                     # Generar el código de barras solo si es válido
                     ean13 = ean(codigo[:-1], writer=ImageWriter())
-                    # filename = ean13.save("codigo_ean13")
-                    # print(f"✅ Código de barras generado: {filename}.png")
                     nombre_archivo = f"temp_{codigo}"
                     ean13.save(nombre_archivo, options={"write_text": False})
                     return f"{nombre_archivo}.png"
@@ -998,7 +996,7 @@ class main():
                 for line in nombre:
                     c.drawString(x + ESPACIADO, text_y, line)
                     text_y -= TAMANO_TEXTO * 1.2
-        # Precio (centro destacado)
+                # Precio (centro destacado)
                 c.setFont(NOMBRE_FUENTE , 8)
                 c.drawCentredString(
                     x + LABEL_WIDTH-0.8*cm,
@@ -1019,20 +1017,35 @@ class main():
                     f"$ {format(producto["precio"],",.2f")}"
                 )
 
+                # Precio sin impuestos nacionales
+                precio_sin_impuestos = producto["precio"] * 0.79
+                c.setFont(NOMBRE_FUENTE, 6)
+                # Split the text into two lines
+                c.drawString(
+                    x + LABEL_WIDTH/2 + 0.3*cm,  # Moved more to the right
+                    y + LABEL_HEIGHT - ZONA_PRECIO - 0.5*cm,
+                    "PRECIO SIN IMPUESTOS"
+                )
+                c.drawString(
+                    x + LABEL_WIDTH/2 + 0.3*cm,  # Moved more to the right
+                    y + LABEL_HEIGHT - ZONA_PRECIO - 0.7*cm,
+                    f"NACIONALES: $ {format(precio_sin_impuestos,",.2f")}"
+                )
+
                 # Código de barras (parte inferior)
                 codigo_img = generar_codigo_barras(producto["codigo"])
                 c.drawImage(codigo_img, 
-                        x +ESPACIADO-0.05*cm, 
+                        x +ESPACIADO+0.1*cm,  # Moved more to the center
                         y + ESPACIADO+0.25*cm, 
                         width=3.0*cm,  # Ancho reducido
-                        height=0.6*cm,  # Altura reducida
+                        height=0.5*cm,  # Altura reducida
                         )
                 
                 # Texto del código
                 c.setFont(NOMBRE_FUENTE, TAMANO_CODIGO)
                 c.drawCentredString(
-                    x +ESPACIADO+ 0.85*cm,
-                    y + ESPACIADO ,
+                    x +ESPACIADO+ 0.95*cm,  # Adjusted to match new barcode position
+                    y + ESPACIADO,
                     producto["codigo"]
                 )
                 

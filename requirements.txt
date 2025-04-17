@@ -1,0 +1,5 @@
+tkinter>=8.6
+ttkbootstrap>=1.10.1
+reportlab>=3.6.12
+python-barcode>=0.14.0
+pywin32>=305; sys_platform == 'win32' 

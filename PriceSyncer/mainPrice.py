@@ -10,6 +10,7 @@ from barcode.ean import EuropeanArticleNumber13
 from barcode.writer import ImageWriter
 import os
 import subprocess
+import sys
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4, landscape
 from reportlab.lib.units import cm
@@ -280,13 +281,19 @@ class main():
                 return
             
             for producto in resultados:
-                net=''
+                net=''  
                 for x in (4,5,6):
                      if producto[x] is not None: net+=f"{producto[x]} "
                 cant= ''
+                
                 for y in (7,8):
-                    if producto[x] is not None or producto[x]!= "Unidad:":
-                         cant+=f"{producto[x]} "
+                    if producto[y] is not None and producto[y]!= "Unidad:":
+                         
+                         if y==7:
+                            cant+=f"{int(producto[y]) if producto[y] == int(producto[y]) else producto[y]}"   
+                         else:
+                            cant+=f"{producto[y]}"
+                print('ds')
                 self.tree.insert("", 'end', values=(
                     net,
                     cant,
@@ -621,7 +628,9 @@ class main():
                 for res in self.Back.etiquetasSearch(instruc=status):
                     net=""
                     for w in (4,5,6,7,8):
-                        if w==8 and res[8] =="Unidad:":
+                        if w==7:
+                            net+=f"{int(res[w]) if res[w] == int(res[w]) else res[w]}"
+                        elif w==8 and res[8] =="Unidad:":
                             pass
                         elif res[w]: 
                             net+=f"{res[w]} "
@@ -678,7 +687,9 @@ class main():
                     for res in doc:
                                     net=""
                                     for w in (4,5,6,7,8):
-                                        if w==8 and res[8] =="Unidad:":
+                                        if w==7:
+                                            net+=f"{int(res[w]) if res[w] == int(res[w]) else res[w]}"
+                                        elif w==8 and res[8] =="Unidad:":
                                             pass
                                         elif res[w]: 
                                             net+=f"{res[w]} "
@@ -807,66 +818,103 @@ class main():
                     if not tree.get_children():
                         messagebox.showerror("error",'No hay productos para imprimir')
                         return
-                    productos=[]
-                    c=0
-                    x=0
+                    
+                    productos = []
+                    selecciones_validas = False
+                    
                     for item_id, vars_list in check_dict.items():
-                        ejecutable=True
-                        c+=1
                         estados = [var.get() for var in vars_list]
-
-                        nombre_producto = tree.item(item_id, "values")[0]  # Obtener el nombre en el Treeview
-                        
-                        for producto in self.datos_productos:
-                                
-                                if producto[2] == nombre_producto and ejecutable:
-                                    ejecutable=False
-                                    
-                                    if producto[12]:
-                                        Cunidad= producto[12]
-                                        unidad=producto[13] 
-                                        if producto[13]=="Unidad:":
-                                            unidad= 'unidad'
-                                        elif producto[13]=="gr":
-                                            unidad='Kg'
-                                            Cunidad=producto[12]/1000
-                                        elif producto[13]=="ml" or producto[13]=="m³":
-                                            unidad='Lt'
-                                            Cunidad=producto[12]/1000
-                                        elif producto[13]=="mg":
-                                            unidad="gr"
-                                            Cunidad=producto[12]/1000
-                                        else:
-                                            pass
-                                    else:
-                                        unidad= 'unidad'
-                                        Cunidad=1
+                        if any(estados):  # Si al menos un checkbox está seleccionado
+                            selecciones_validas = True
+                            nombre_producto = tree.item(item_id, "values")[0]
+                            
+                            for producto in self.datos_productos:
+                                if producto[2] == nombre_producto:
+                                    try:
+                                        # Convertir a float si es posible
+                                        Cunidad = float(producto[12]) if producto[12] else 1
+                                        unidad = producto[13] 
+                                        
+                                        if producto[13] == "Unidad:":
+                                            unidad = 'unidad'
+                                        elif producto[13] == "gr":
+                                            unidad = 'Kg'
+                                            Cunidad = Cunidad/1000
+                                        elif producto[13] == "ml" or producto[13] == "m³":
+                                            unidad = 'Lt'
+                                            Cunidad = Cunidad/1000
+                                        elif producto[13] == "mg":
+                                            unidad = "gr"
+                                            Cunidad = Cunidad/1000
+                                    except (ValueError, TypeError):
+                                        # Si hay error en la conversión, usar valores por defecto
+                                        unidad = 'unidad'
+                                        Cunidad = 1
+                                        
                                     if estados[0]:
-                                        value={"nombre": f"{producto[2]}", "precio": producto[1], "codigo": f"{producto[0]}","cunidad":Cunidad,"unidad": f"{unidad}","fecha":f"{producto[7]}"}
-                                        productos.append(value)  # Guardamos el nombre y los estados
+                                        value = {
+                                            "nombre": f"{producto[2]}", 
+                                            "precio": float(producto[1]) if producto[1] else 0, 
+                                            "codigo": f"{producto[0]}",
+                                            "cunidad": Cunidad,
+                                            "unidad": f"{unidad}",
+                                            "fecha": f"{producto[7]}"
+                                        }
+                                        productos.append(value)
                                     if estados[1]:
-                                        value={"descripcion": f"{producto[2]}", "precio_anterior": (producto[1]*producto[9]),"precio":(producto[4]) , 
-                                        "codigo_barras": f"{producto[0]}","CantUni":Cunidad,"unidad": f"{unidad}","cant":producto[9]}
+                                        value = {
+                                            "descripcion": f"{producto[2]}", 
+                                            "precio_anterior": float(producto[1])*float(producto[9]) if producto[1] and producto[9] else 0,
+                                            "precio": float(producto[4]) if producto[4] else 0, 
+                                            "codigo_barras": f"{producto[0]}",
+                                            "CantUni": Cunidad,
+                                            "unidad": f"{unidad}",
+                                            "cant": float(producto[9]) if producto[9] else 0
+                                        }
                                         productos.append(value)
                                     if estados[2]:
-                                        value={"descripcion": f"{producto[2]}", "precio_anterior": (producto[1]*producto[10]),"precio":(producto[5]) , 
-                                        "codigo_barras": f"{producto[0]}","CantUni":Cunidad,"unidad": f"{unidad}","cant":producto[10]}
+                                        value = {
+                                            "descripcion": f"{producto[2]}", 
+                                            "precio_anterior": float(producto[1])*float(producto[10]) if producto[1] and producto[10] else 0,
+                                            "precio": float(producto[5]) if producto[5] else 0, 
+                                            "codigo_barras": f"{producto[0]}",
+                                            "CantUni": Cunidad,
+                                            "unidad": f"{unidad}",
+                                            "cant": float(producto[10]) if producto[10] else 0
+                                        }
                                         productos.append(value)
                                     if estados[3]:
-                                        value={"descripcion": f"{producto[2]}", "precio_anterior": (producto[1]*producto[11]),"precio":(producto[6]) , 
-                                        'codigo_barras': f"{producto[0]}","CantUni":Cunidad,"unidad": f"{unidad}","cant":producto[11]}
+                                        value = {
+                                            "descripcion": f"{producto[2]}", 
+                                            "precio_anterior": float(producto[1])*float(producto[11]) if producto[1] and producto[11] else 0,
+                                            "precio": float(producto[6]) if producto[6] else 0, 
+                                            "codigo_barras": f"{producto[0]}",
+                                            "CantUni": Cunidad,
+                                            "unidad": f"{unidad}",
+                                            "cant": float(producto[11]) if producto[11] else 0
+                                        }
                                         productos.append(value)
+                                    break
+                    
+                    if not selecciones_validas:
+                        messagebox.showerror("Error", "No hay productos seleccionados")
+                        return
                         
-                    if self.estado==1:                        
+                    if not productos:
+                        messagebox.showerror("Error", "No se encontraron datos válidos para los productos seleccionados")
+                        return
+                        
+                    if self.estado == 1:                        
                         self.eti(productos)
-                    elif self.estado==2:
+                    elif self.estado == 2:
                         self.generar_oferta(productos=productos, disposicion="4x1")
-                    elif self.estado==3:
+                    elif self.estado == 3:
                         self.generar_oferta(productos=productos, disposicion="2x1")
-                    elif self.estado==4:
+                    elif self.estado == 4:
                         self.generar_oferta(productos=productos, disposicion="1x1")
-                except:
-                    messagebox.showerror("error","Chequee las elecciones")
+                        
+                except Exception as e:
+                    messagebox.showerror("Error", f"Error al procesar las selecciones: {str(e)}")
         
         self.datos_productos=[]
         self.etiF=tk.Frame(self.app,)
@@ -958,21 +1006,54 @@ class main():
         ZONA_CODIGO = 3.0 * cm
 
         def generar_codigo_barras(codigo):
-                # Obtener clase EAN-13
-                ean = barcode.get_barcode_class("ean13")
+            try:
+                # Convertir a string y eliminar espacios
+                codigo = str(codigo).strip()
                 
-                # Verificar si el último dígito es correcto
-                ean_temp = ean(codigo[:-1])  # Usamos solo los primeros 12 dígitos
-                codigo_generado = ean_temp.get_fullcode()  # Obtiene los 13 dígitos con checksum
-
-                if codigo_generado != codigo:
-                    print(f"⚠️ El código {codigo} no es válido. El checksum correcto sería: {codigo_generado}")
-                else:
-                    # Generar el código de barras solo si es válido
+                # Verificar si el código es válido
+                if not codigo:
+                    raise ValueError("El código está vacío")
+                
+                # Determinar el tipo de código de barras basado en la longitud
+                if len(codigo) == 13:
+                    # EAN-13
+                    ean = barcode.get_barcode_class("ean13")
                     ean13 = ean(codigo[:-1], writer=ImageWriter())
                     nombre_archivo = f"temp_{codigo}"
                     ean13.save(nombre_archivo, options={"write_text": False})
                     return f"{nombre_archivo}.png"
+                elif len(codigo) == 12:
+                    # UPC-A (similar a EAN-13)
+                    ean = barcode.get_barcode_class("ean13")
+                    ean13 = ean(codigo, writer=ImageWriter())
+                    nombre_archivo = f"temp_{codigo}"
+                    ean13.save(nombre_archivo, options={"write_text": False})
+                    return f"{nombre_archivo}.png"
+                elif len(codigo) == 8:
+                    # EAN-8
+                    ean = barcode.get_barcode_class("ean8")
+                    ean8 = ean(codigo[:-1], writer=ImageWriter())
+                    nombre_archivo = f"temp_{codigo}"
+                    ean8.save(nombre_archivo, options={"write_text": False})
+                    return f"{nombre_archivo}.png"
+                else:
+                    # Code128 para cualquier otra longitud
+                    code128 = barcode.get_barcode_class("code128")
+                    code = code128(codigo, writer=ImageWriter())
+                    nombre_archivo = f"temp_{codigo}"
+                    code.save(nombre_archivo, options={"write_text": False})
+                    return f"{nombre_archivo}.png"
+            except Exception as e:
+                # Si hay algún error, usar Code128 como fallback
+                try:
+                    code128 = barcode.get_barcode_class("code128")
+                    code = code128(str(codigo), writer=ImageWriter())
+                    nombre_archivo = f"temp_{codigo}"
+                    code.save(nombre_archivo, options={"write_text": False})
+                    return f"{nombre_archivo}.png"
+                except:
+                    raise ValueError(f"Error al generar código de barras: {str(e)}")
+
         def crear_etiquetas():
             c = canvas.Canvas("etiquetas_precios.pdf", pagesize=A4)
             
@@ -1019,16 +1100,16 @@ class main():
 
                 # Precio sin impuestos nacionales
                 precio_sin_impuestos = producto["precio"] * 0.79
-                c.setFont(NOMBRE_FUENTE, 6)
+                c.setFont(NOMBRE_FUENTE, 5)  # Reduced from 6 to 5
                 # Split the text into two lines
                 c.drawString(
                     x + LABEL_WIDTH/2 + 0.3*cm,  # Moved more to the right
-                    y + LABEL_HEIGHT - ZONA_PRECIO - 0.5*cm,
+                    y + LABEL_HEIGHT - ZONA_PRECIO - 0.6*cm,  # Moved down from 0.5 to 0.7
                     "PRECIO SIN IMPUESTOS"
                 )
                 c.drawString(
                     x + LABEL_WIDTH/2 + 0.3*cm,  # Moved more to the right
-                    y + LABEL_HEIGHT - ZONA_PRECIO - 0.7*cm,
+                    y + LABEL_HEIGHT - ZONA_PRECIO - 0.8*cm,  # Moved down from 0.7 to 0.9
                     f"NACIONALES: $ {format(precio_sin_impuestos,",.2f")}"
                 )
 
@@ -1069,6 +1150,56 @@ class main():
                         "ofertas.pdf"):
         def formatear_float(num):
             return str(num).rstrip('0').rstrip('.') if '.' in str(num) else str(num)
+
+        def generar_codigo_barras(codigo):
+            try:
+                # Convertir a string y eliminar espacios
+                codigo = str(codigo).strip()
+                
+                # Verificar si el código es válido
+                if not codigo:
+                    raise ValueError("El código está vacío")
+                
+                # Determinar el tipo de código de barras basado en la longitud
+                if len(codigo) == 13:
+                    # EAN-13
+                    ean = barcode.get_barcode_class("ean13")
+                    ean13 = ean(codigo[:-1], writer=ImageWriter())
+                    nombre_archivo = f"temp_{codigo}"
+                    ean13.save(nombre_archivo, options={"write_text": False})
+                    return f"{nombre_archivo}.png"
+                elif len(codigo) == 12:
+                    # UPC-A (similar a EAN-13)
+                    ean = barcode.get_barcode_class("ean13")
+                    ean13 = ean(codigo, writer=ImageWriter())
+                    nombre_archivo = f"temp_{codigo}"
+                    ean13.save(nombre_archivo, options={"write_text": False})
+                    return f"{nombre_archivo}.png"
+                elif len(codigo) == 8:
+                    # EAN-8
+                    ean = barcode.get_barcode_class("ean8")
+                    ean8 = ean(codigo[:-1], writer=ImageWriter())
+                    nombre_archivo = f"temp_{codigo}"
+                    ean8.save(nombre_archivo, options={"write_text": False})
+                    return f"{nombre_archivo}.png"
+                else:
+                    # Code128 para cualquier otra longitud
+                    code128 = barcode.get_barcode_class("code128")
+                    code = code128(codigo, writer=ImageWriter())
+                    nombre_archivo = f"temp_{codigo}"
+                    code.save(nombre_archivo, options={"write_text": False})
+                    return f"{nombre_archivo}.png"
+            except Exception as e:
+                # Si hay algún error, usar Code128 como fallback
+                try:
+                    code128 = barcode.get_barcode_class("code128")
+                    code = code128(str(codigo), writer=ImageWriter())
+                    nombre_archivo = f"temp_{codigo}"
+                    code.save(nombre_archivo, options={"write_text": False})
+                    return f"{nombre_archivo}.png"
+                except:
+                    raise ValueError(f"Error al generar código de barras: {str(e)}")
+
         # Configurar disposición y orientación
         if disposicion == "1x1" :
             ancho, alto = landscape(A4)
@@ -1084,6 +1215,7 @@ class main():
             '2x1': {'titulo': 30, 'precio': 38, 'normal': 14},
             '4x1': {'titulo': 22, 'precio': 30, 'normal': 8}
         }[disposicion]
+
         margen = 1 * cm                                     
         estilos = {
             'titulo': ParagraphStyle(
@@ -1171,18 +1303,25 @@ class main():
             if producto["cant"]==1: 
                 precio_actual = Paragraph(f"Ahora: <b> ${format((producto['precio']*producto['cant']),",.2f")}</b>", estilos['precio'])
             else:
-                precio_actual = Paragraph(f"Ahora: <b>{producto['cant']}x ${format((producto['precio']*producto['cant']),",.2f")}</b>", estilos['precio'])
+                precio_actual = Paragraph(f"Ahora: <b>{int(producto['cant'])}x ${format((producto['precio']*producto['cant']),",.2f")}</b>", estilos['precio'])
             precio_actual.wrapOn(c, ancho_etiqueta - 1 * cm, alto_etiqueta)
             x_pos = x + (ancho_etiqueta - precio_actual.width) / 2
             precio_actual.drawOn(c, x_pos, y + alto_etiqueta - (4.5 * cm*state) - precio_actual.height)
 
-            # 4. Precio anterior tachado
+            # 4. Precio sin impuestos nacionales
+            precio_sin_impuestos = producto['precio'] * 0.79
+            precio_sin_impuestos_text = Paragraph(f"PRECIO SIN IMPUESTOS NACIONALES: $ {format(precio_sin_impuestos,",.2f")}", estilos['other'])
+            precio_sin_impuestos_text.wrapOn(c, ancho_etiqueta - 1 * cm, alto_etiqueta)
+            x_pos = x + 0.5 * cm  # Alineado a la izquierda como precio por litro
+            precio_sin_impuestos_text.drawOn(c, x_pos, y + 0.5 * cm)  # Posicionado justo debajo del precio por litro
+
+            # 5. Precio anterior tachado
             precio_anterior = Paragraph(f"<b>Antes:</b> $ {format(producto['precio_anterior'],",.2f")}", estilos['other'])
             precio_anterior.wrapOn(c, ancho_etiqueta - 1 * cm, alto_etiqueta)
             x_pos = x + 5*cm+(ancho_etiqueta - precio_anterior.width) / 2
             precio_anterior.drawOn(c, x_pos, y + alto_etiqueta - (6.5 * cm*state) - precio_anterior.height)
             
-            # 5. Precio por litro
+            # 6. Precio por litro
             uni= producto['unidad'] if not producto['unidad']== 'Unidad:' else 'unidad'
             if producto["cant"]==1:
                 precio_litro = Paragraph(f"Precio por {producto['unidad']}: $ {format((producto['CantUni']*producto["precio"]), ",.2f")}", estilos['other'])
@@ -1192,13 +1331,21 @@ class main():
             x_pos = x + 0.5 * cm  # Alineado a la izquierda
             precio_litro.drawOn(c, x_pos, y + 1 * cm)
 
-            # 6. Código de barras numérico (alineado a la derecha)
+            # 7. Código de barras numérico (alineado a la derecha)
             codigo = Paragraph(f"Art: {producto['codigo_barras']}", estilos['other1'])
             codigo.wrapOn(c, ancho_etiqueta - 1 * cm, alto_etiqueta)
             x_pos = x + ancho_etiqueta - codigo.width - 0.5 * cm  # Alineado a la derecha
             codigo.drawOn(c, x_pos, y + 1 * cm)
-            # Código de barras
 
+            # 8. Código de barras
+            codigo_img = generar_codigo_barras(producto['codigo_barras'])
+            c.drawImage(codigo_img, 
+                    x_pos,  # Misma posición x que el código numérico
+                    y + 1.5 * cm,  # Justo debajo del código numérico
+                    width=3.0 * cm,  # Ancho del código de barras
+                    height=0.5 * cm,  # Altura del código de barras
+                    )
+            os.remove(codigo_img)  # Limpiar el archivo temporal
 
         c.save()
         self.abrir_pdf("ofertas.pdf")

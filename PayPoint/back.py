@@ -85,6 +85,70 @@ class Logic:
         id INT AUTO_INCREMENT PRIMARY KEY,
         """ + ", ".join([f"item_{i} VARCHAR(40)" for i in range(1, 101)]) + """)""")
         self.mydb.commit()
+
+    def update_caja1(self, facturated=0, non_facturated=0, card=0, cash=0, virtual=0, tcard=0, tcash=0, tvirtual=0, tcancelled=0, cancelled=0):
+        """Update the Caja1 table with the current transaction details"""
+        try:
+            # First check if table exists, if not create it
+            self.cursor.execute("""
+                CREATE TABLE IF NOT EXISTS Caja1 (
+                    Date datetime NOT NULL,
+                    Facturated int DEFAULT NULL,
+                    Non_Facturated int DEFAULT NULL,
+                    Card int DEFAULT NULL,
+                    Cash int DEFAULT NULL,
+                    Virtual int DEFAULT NULL,
+                    Tcard int DEFAULT NULL,
+                    Tcash int DEFAULT NULL,
+                    Tvirtual int DEFAULT NULL,
+                    TCancelled int DEFAULT NULL,
+                    Cancelled int DEFAULT NULL,
+                    PRIMARY KEY (Date),
+                    UNIQUE KEY Date_UNIQUE (Date)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
+            """)
+            
+            # Get current date
+            from datetime import datetime, timedelta
+            current_date = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            
+            # Delete records older than 7 days
+            seven_days_ago = (datetime.now() - timedelta(days=7)).strftime('%Y-%m-%d %H:%M:%S')
+            self.cursor.execute("DELETE FROM Caja1 WHERE Date < %s", (seven_days_ago,))
+            
+            # Check if record exists for today
+            self.cursor.execute("SELECT * FROM Caja1 WHERE Date = %s", (current_date,))
+            result = self.cursor.fetchone()
+            
+            if result:
+                # Update existing record
+                self.cursor.execute("""
+                    UPDATE Caja1 
+                    SET Facturated = Facturated + %s,
+                        Non_Facturated = Non_Facturated + %s,
+                        Card = Card + %s,
+                        Cash = Cash + %s,
+                        Virtual = Virtual + %s,
+                        Tcard = Tcard + %s,
+                        Tcash = Tcash + %s,
+                        Tvirtual = Tvirtual + %s,
+                        TCancelled = TCancelled + %s,
+                        Cancelled = Cancelled + %s
+                    WHERE Date = %s
+                """, (facturated, non_facturated, card, cash, virtual, tcard, tcash, tvirtual, tcancelled, cancelled, current_date))
+            else:
+                # Insert new record
+                self.cursor.execute("""
+                    INSERT INTO Caja1 (Date, Facturated, Non_Facturated, Card, Cash, Virtual, Tcard, Tcash, Tvirtual, TCancelled, Cancelled)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                """, (current_date, facturated, non_facturated, card, cash, virtual, tcard, tcash, tvirtual, tcancelled, cancelled))
+            
+            self.mydb.commit()
+            return True
+        except Exception as e:
+            print(f"Error updating Caja1: {str(e)}")
+            return False
+
     def cmd_error (self,cmdname,drv):
         "Manejo error en comando"
         err = drv.IFOpErrorGet()

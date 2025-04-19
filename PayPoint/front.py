@@ -587,8 +587,12 @@ class caja():
         self.R_vuelto_valor = tb.Label(self.resume, text=f'$ 0.00',
                                   font=('arial', int(30 * self.Bend.font)), background='#F1EAD7',
                                   foreground='#847C67')
-        self.R_facturacion= tb.Button(self.resume, text= 'Facturacion', style="Custom.TButton",command=lambda:(self.resume.destroy(), 
-                                                                                                               self.ppbind(),self.call("tique", event)))
+        self.R_facturacion = tb.Button(
+            self.resume, 
+            text='Facturacion', 
+            style="Custom.TButton",
+            command=lambda: self.facturacion_click(event)
+        )
         self.R_efectivo_valor.place(relx= 0.3244, rely= 0.3945, relwidth=0.17)
         self.R_PagoElec_valor.place(relx= 0.3244, rely= 0.4557, relwidth=0.17)
         self.R_tarjeta_valor.place(relx= 0.3244, rely= 0.5182, relwidth=0.17)
@@ -746,8 +750,23 @@ class caja():
             elif command in ['AuditoriaDZ', 'AuditoriaDF', 'AuditoriaF', 'AuditoriaZ']:
                 if result:
                     self.mostrar_error(f"{result}", 4)
-    def cancelar_anular(self, status, event=0):
-        if status ==1:
+    def cancelar_anular(self, status, event=0, achieve=0):
+        if achieve:
+            # Update Caja1 table with cancellation
+            self.Bend.update_caja1(
+                facturated=0,
+                non_facturated=0,
+                card=0,
+                cash=0,
+                virtual=0,
+                tcard=0,
+                tcash=0,
+                tvirtual=0,
+                tcancelled=1,  # Add 1 to cancelled transactions count
+                cancelled=self.Bend.subtotal  # Add subtotal to cancelled amount
+            )
+            
+        if status == 1:
             self.Bend.suma(refresh=1)
             self.detalles.delete(*self.detalles.get_children())
             self.cantidad.config(text= f'{self.Bend.cant}')
@@ -963,6 +982,55 @@ class caja():
         S_fecha.insert(0, f'{date.today()}')
         F_fecha.insert(0, f'{date.today()}')
 
- 
+    def facturacion_click(self, event=0, status=0):
+        # Initialize payment counters
+        card = 0
+        cash = 0
+        virtual = 0
+        tcard = 0
+        tcash = 0
+        tvirtual = 0
+        
+        # Get payment amounts from the transaction
+        if hasattr(self, 'R_efectivo_valor') and self.R_efectivo_valor.get():
+            cash = float(self.R_efectivo_valor.get().replace('$', '').replace(',', ''))
+            tcash = 1  # Count as one cash transaction
+        if hasattr(self, 'R_tarjeta_valor') and self.R_tarjeta_valor.get():
+            card = float(self.R_tarjeta_valor.get().replace('$', '').replace(',', ''))
+            tcard = 1  # Count as one card transaction
+        if hasattr(self, 'R_PagoElec_valor') and self.R_PagoElec_valor.get():
+            virtual = float(self.R_PagoElec_valor.get().replace('$', '').replace(',', ''))
+            tvirtual = 1  # Count as one virtual transaction
+        
+        # Calculate total payment
+        total_payment = cash + card + virtual
+        
+        # If only cash payment, adjust to subtotal
+        if tcash == 1 and tcard == 0 and tvirtual == 0:
+            cash = self.Bend.subtotal
+        # If combined payment, validate total
+        elif total_payment != self.Bend.subtotal:
+            self.mostrar_error("La suma de los pagos debe ser igual al total", 1)
+            return
+        
+        # Update Caja1 table
+        self.Bend.update_caja1(
+            facturated=self.Bend.subtotal if status == 1 else 0 ,
+            non_facturated=self.Bend.subtotal if status == 2 else 0,
+            card=card,
+            cash=cash,
+            virtual=virtual,
+            tcard=tcard,
+            tcash=tcash,
+            tvirtual=tvirtual,
+            tcancelled=0,
+            cancelled=0
+        )
+        self.resume.destroy()
+        self.ppbind()
+        if status == 1:
+            self.call("tique", event)
+        elif status == 2:
+            self.cancelar_anular(status=1)
 
 caja()

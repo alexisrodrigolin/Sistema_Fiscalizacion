@@ -104,11 +104,21 @@ export function SalesDashboard() {
     fetchLast30DaysData()
   }, [])
 
-  // Calculate total sales for the filtered period
+  // Calculate totals for the filtered period
   const totalSales = salesData.reduce((sum, item) => 
     sum + item.invoiced_total + item.non_invoiced_total, 0)
   const invoicedSales = salesData.reduce((sum, item) => sum + item.invoiced_total, 0)
   const nonInvoicedSales = salesData.reduce((sum, item) => sum + item.non_invoiced_total, 0)
+  const cancelledSales = salesData.reduce((sum, item) => sum + item.cancelled_total, 0)
+  const cancelledTransactions = salesData.reduce((sum, item) => sum + item.cancelled_transactions, 0)
+
+  // Calculate payment method totals
+  const cashTotal = salesData.reduce((sum, item) => sum + item.cash_total, 0)
+  const cardTotal = salesData.reduce((sum, item) => sum + item.card_total, 0)
+  const virtualTotal = salesData.reduce((sum, item) => sum + item.virtual_total, 0)
+  const cashTransactions = salesData.reduce((sum, item) => sum + item.cash_transactions, 0)
+  const cardTransactions = salesData.reduce((sum, item) => sum + item.card_transactions, 0)
+  const virtualTransactions = salesData.reduce((sum, item) => sum + item.virtual_transactions, 0)
 
   // Calculate average daily sales
   const avgDailySales = salesData.length > 0 ? totalSales / salesData.length : 0
@@ -125,6 +135,14 @@ export function SalesDashboard() {
     totalSales,
     invoicedSales,
     nonInvoicedSales,
+    cancelledSales,
+    cancelledTransactions,
+    cashTotal,
+    cardTotal,
+    virtualTotal,
+    cashTransactions,
+    cardTransactions,
+    virtualTransactions,
     avgDailySales,
     highestSalesDay,
     salesDataLength: salesData.length
@@ -141,9 +159,17 @@ export function SalesDashboard() {
         totalSales={totalSales}
         facturatedSales={invoicedSales}
         nonFacturatedSales={nonInvoicedSales}
+        cancelledSales={cancelledSales}
+        cancelledTransactions={cancelledTransactions}
         avgDailySales={avgDailySales}
         highestSalesDay={highestSalesDay}
         dateRange={dateRange}
+        cashTotal={cashTotal}
+        cardTotal={cardTotal}
+        virtualTotal={virtualTotal}
+        cashTransactions={cashTransactions}
+        cardTransactions={cardTransactions}
+        virtualTransactions={virtualTransactions}
       />
 
       <div className="w-full">

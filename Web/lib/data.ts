@@ -113,8 +113,15 @@ export async function getDailySales(startDate: string, endDate: string) {
     throw error
   }
 
-  console.log('Raw data from Supabase:', data)
-  return data
+  // Ensure all required fields are present, defaulting to 0 for cancelled fields if missing
+  const processedData = data.map(item => ({
+    ...item,
+    cancelled_total: item.cancelled_total || 0,
+    cancelled_transactions: item.cancelled_transactions || 0,
+  }))
+
+  console.log('Processed data from Supabase:', processedData)
+  return processedData
 }
 
 // Insert new daily sales record

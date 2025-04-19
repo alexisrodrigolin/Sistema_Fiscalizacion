@@ -3,7 +3,7 @@
 import type * as React from "react"
 import { CalendarIcon } from "lucide-react"
 import { format } from "date-fns"
-import { es } from 'date-fns/locale'
+import { enUS } from 'date-fns/locale'
 import type { DateRange } from "react-day-picker"
 
 import { cn } from "@/lib/utils"
@@ -46,13 +46,13 @@ export function DatePickerWithRange({ dateRange, setDateRange, className }: Date
             {dateRange?.from ? (
               dateRange.to && dateRange.from !== dateRange.to ? (
                 <>
-                  {format(dateRange.from, "d 'de' MMMM, y", { locale: es })} - {format(dateRange.to, "d 'de' MMMM, y", { locale: es })}
+                  {format(dateRange.from, "MMM d, y", { locale: enUS })} - {format(dateRange.to, "MMM d, y", { locale: enUS })}
                 </>
               ) : (
-                format(dateRange.from, "d 'de' MMMM, y", { locale: es })
+                format(dateRange.from, "MMM d, y", { locale: enUS })
               )
             ) : (
-              <span>Seleccionar fecha</span>
+              <span>Select date</span>
             )}
           </Button>
         </PopoverTrigger>
@@ -60,8 +60,8 @@ export function DatePickerWithRange({ dateRange, setDateRange, className }: Date
           <Tabs defaultValue="single">
             <div className="flex items-center justify-between px-4 pt-3">
               <TabsList>
-                <TabsTrigger value="single">Fecha única</TabsTrigger>
-                <TabsTrigger value="range">Rango de fechas</TabsTrigger>
+                <TabsTrigger value="single">Single Date</TabsTrigger>
+                <TabsTrigger value="range">Date Range</TabsTrigger>
               </TabsList>
             </div>
             <TabsContent value="single" className="p-3">
@@ -70,7 +70,7 @@ export function DatePickerWithRange({ dateRange, setDateRange, className }: Date
                 selected={dateRange?.from} 
                 onSelect={handleSelectDate} 
                 initialFocus
-                locale={es}
+                locale={enUS}
                 weekStartsOn={1}
                 showOutsideDays={false}
                 modifiers={{
@@ -96,7 +96,7 @@ export function DatePickerWithRange({ dateRange, setDateRange, className }: Date
                 onSelect={setDateRange} 
                 numberOfMonths={2} 
                 initialFocus
-                locale={es}
+                locale={enUS}
                 weekStartsOn={1}
                 showOutsideDays={false}
                 modifiersStyles={{

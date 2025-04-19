@@ -29,21 +29,28 @@ export function DashboardHeader() {
   }
 
   return (
-    <header className="border-b bg-white shadow-sm">
-      <div className="container mx-auto flex h-16 items-center px-4 sm:px-6">
+    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="container flex h-16 items-center justify-between px-4">
         <Link href="/" className="flex items-center gap-2">
           <ShoppingCart className="h-6 w-6 text-blue-600" />
-          <span className="font-bold text-gray-900">SuperMarket Analytics</span>
+          <div className="flex flex-col">
+            <span className="font-bold text-xl hidden sm:block">RetailPulse</span>
+            <span className="font-bold text-lg block sm:hidden">RP</span>
+            <span className="text-xs text-muted-foreground hidden sm:block">Database: {databaseName}</span>
+          </div>
         </Link>
-        <div className="ml-auto flex items-center gap-4">
-          <p className="text-sm text-gray-600">
-            Usuario: <span className="font-medium">{userName}</span> | Base de datos: <span className="font-medium">{databaseName}</span>
-          </p>
+        <div className="flex items-center gap-2 sm:gap-4">
+          <div className="text-sm text-muted-foreground hidden sm:block">
+            User: {userName}
+          </div>
+          <div className="text-sm text-muted-foreground block sm:hidden">
+            {userName}
+          </div>
           <button
             onClick={handleLogout}
-            className="rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 transition-colors"
+            className="bg-red-600 hover:bg-red-700 text-white px-3 sm:px-4 py-2 rounded-lg text-sm font-medium transition-colors"
           >
-            Cerrar sesión
+            Sign Out
           </button>
         </div>
       </div>

@@ -1,35 +1,37 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
-import { ThemeProvider } from '@/components/theme-provider'
 import { SupabaseProvider } from '@/components/providers/supabase-provider'
+import { ThemeProvider } from '@/components/theme-provider'
 
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'Supermarket Dashboard',
-  description: 'A dashboard for supermarket sales analytics',
+  title: 'RetailPulse',
+  description: 'Modern retail management dashboard',
 }
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode
-}>) {
+}) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <head />
-      <body className={`${inter.className} bg-white min-h-screen`}>
+      <body className={inter.className}>
         <ThemeProvider
           attribute="class"
           defaultTheme="light"
           enableSystem={false}
           disableTransitionOnChange
-          storageKey="supermarket-theme"
-          forcedTheme="light"
         >
           <SupabaseProvider>
-            {children}
+            <div className="min-h-screen bg-background">
+              {/* Main content */}
+              <main className="container px-4 py-6">
+                {children}
+              </main>
+            </div>
           </SupabaseProvider>
         </ThemeProvider>
       </body>

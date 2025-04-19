@@ -19,9 +19,9 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
     try {
       const { username } = JSON.parse(currentUserCookie)
       // Recuperamos las credenciales completas del usuario
-      const user = getUser(username, '') // La contraseña no es necesaria aquí ya que buscaremos solo por username
+      const user = getUser(username, '') // Password is not needed here since we'll search by username only
       if (!user) {
-        console.error('Usuario no encontrado en la configuración')
+        console.error('User not found in configuration')
         Cookies.remove('currentUser')
         router.push('/login')
         return

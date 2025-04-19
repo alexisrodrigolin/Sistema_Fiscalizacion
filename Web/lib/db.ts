@@ -31,6 +31,11 @@ function generateMockSalesData(startDate: Date, endDate: Date) {
     const facturatedTransactions = Math.round(baseTransactions * facturationRatio)
     const nonFacturatedTransactions = baseTransactions - facturatedTransactions
 
+    // Add cancelled transactions (between 1% and 5% of total transactions)
+    const cancelledRatio = Math.floor(Math.random() * (5 - 1 + 1) + 1) / 100
+    const cancelledTransactions = Math.round(baseTransactions * cancelledRatio)
+    const cancelledTotal = Math.round(cancelledTransactions * avgTransactionValue * 100) / 100
+
     const facturatedTotal = Math.round(facturatedTransactions * avgTransactionValue * 100) / 100
     const nonFacturatedTotal = Math.round(nonFacturatedTransactions * avgTransactionValue * 100) / 100
     const total = facturatedTotal + nonFacturatedTotal
@@ -44,6 +49,8 @@ function generateMockSalesData(startDate: Date, endDate: Date) {
       transactions: baseTransactions,
       facturatedTransactions,
       nonFacturatedTransactions,
+      cancelledTotal,
+      cancelledTransactions,
       salesDepartments: [
         {
           department: { name: "Groceries" },

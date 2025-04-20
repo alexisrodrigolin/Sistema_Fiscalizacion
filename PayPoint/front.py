@@ -4,10 +4,13 @@ from ttkbootstrap.constants import *
 import back
 import textwrap
 from tkinter import messagebox
-from datetime import date
+from datetime import date, datetime
 import math
 import itertools
 import copy
+import os
+import json
+from supabase import create_client
 
 class caja():
 
@@ -173,12 +176,40 @@ class caja():
                 self.Bend.datos['AdminPass']= passwordA.get()
                 self.Bend.datos['EntryPass']= passwordE.get()
                 self.Bend.datos['SuperPass']= passwordS.get()
+                self.Bend.datos['Printer']= printer.get()  # Guardar nombre de impresora
   
                 if status==1: 
                     self.Bend.datos['Db']= Db.get()
                     self.Bend.datos['User']= DbU.get()
                     self.Bend.datos['Password']= DbP.get()[5:] 
-                    self.Bend.datos['Font']= font.get()            
+                    self.Bend.datos['Font']= font.get()
+                    
+                    # Save Supabase configuration if fields are not empty
+                    if supabase_url.get().strip() and supabase_key.get().strip():
+                        supabase_config = {
+                            "supabase_url": supabase_url.get().strip(),
+                            "supabase_key": supabase_key.get().strip()
+                        }
+                        supabase_config_path = os.path.join(os.path.dirname(__file__), "supabase_config.json")
+                        with open(supabase_config_path, "w") as f:
+                            json.dump(supabase_config, f, indent=4)
+                        
+                        # Try to initialize Supabase client with new configuration
+                        try:
+                            self.Bend.supabase = create_client(
+                                supabase_config["supabase_url"],
+                                supabase_config["supabase_key"]
+                            )
+                            messagebox.showinfo("Éxito", "Configuración de Supabase guardada y conectada correctamente")
+                        except Exception as e:
+                            messagebox.showerror("Error", f"Error al conectar con Supabase: {str(e)}")
+                            return
+                    else:
+                        # If fields are empty, disable Supabase
+                        self.Bend.supabase = None
+                        if os.path.exists(os.path.join(os.path.dirname(__file__), "supabase_config.json")):
+                            os.remove(os.path.join(os.path.dirname(__file__), "supabase_config.json"))
+                            
                 self.Bend.writeCfg()
                 cfg.destroy()
             
@@ -198,6 +229,9 @@ class caja():
         tb.Label(cfg, text="Contraseña Administrador:", background='#F1EAD7',font=("arial", int(30 * self.Bend.font))).pack()
         passwordA=tb.Entry(cfg,style="Custom.TButton",font=("arial", int(15 * self.Bend.font)),justify="center") 
         passwordA.pack()
+        tb.Label(cfg, text="Nombre de Impresora:", background='#F1EAD7',font=("arial", int(30 * self.Bend.font))).pack()
+        printer=tb.Entry(cfg,style="Custom.TButton",font=("arial", int(15 * self.Bend.font)),justify="center") 
+        printer.pack()
         tb.Label(cfg, text="#Mantener Precaución al manipular las configuraciones", background='#F1EAD7', foreground="grey").pack()
 
         com.insert(0, self.Bend.datos['Com'])
@@ -205,6 +239,7 @@ class caja():
         passwordA.insert(0, self.Bend.datos['AdminPass'])
         passwordE.insert(0, self.Bend.datos['EntryPass'])
         passwordS.insert(0, self.Bend.datos['SuperPass'])
+        printer.insert(0, self.Bend.datos['Printer'])
 
         if status== 1:
             tb.Label(cfg, text="Database:", background='#F1EAD7',font=("Arial", int(30 * self.Bend.font))).pack()
@@ -223,6 +258,30 @@ class caja():
             font=tb.Entry(cfg,style="Custom.TButton",font=("arial", int(15 * self.Bend.font)),justify="center") 
             font.pack()
             font.insert(0, self.Bend.datos['Font'])
+            
+            # Add Supabase configuration fields
+            tb.Label(cfg, text="Configuración de Supabase", background='#F1EAD7',font=("arial", int(30 * self.Bend.font), "bold")).pack(pady=20)
+            tb.Label(cfg, text="(Dejar vacío para deshabilitar)", background='#F1EAD7',font=("arial", int(15 * self.Bend.font)), foreground="grey").pack()
+            
+            tb.Label(cfg, text="Supabase URL:", background='#F1EAD7',font=("arial", int(30 * self.Bend.font))).pack()
+            supabase_url=tb.Entry(cfg,style="Custom.TButton",font=("arial", int(15 * self.Bend.font)),justify="center", width=50) 
+            supabase_url.pack()
+            
+            tb.Label(cfg, text="Supabase Key:", background='#F1EAD7',font=("arial", int(30 * self.Bend.font))).pack()
+            supabase_key=tb.Entry(cfg,style="Custom.TButton",font=("arial", int(15 * self.Bend.font)),justify="center", width=50) 
+            supabase_key.pack()
+            
+            # Load current Supabase configuration
+            try:
+                supabase_config_path = os.path.join(os.path.dirname(__file__), "supabase_config.json")
+                if os.path.exists(supabase_config_path):
+                    with open(supabase_config_path, "r") as f:
+                        supabase_config = json.load(f)
+                    supabase_url.insert(0, supabase_config.get("supabase_url", ""))
+                    supabase_key.insert(0, supabase_config.get("supabase_key", ""))
+            except Exception as e:
+                print(f"Error loading Supabase config: {str(e)}")
+            
         tb.Button(cfg, text="Guardar", style="Custom.TButton", command=save).pack(pady=10)
         tb.Button(cfg, text="Menu", style="Custom.TButton", command=cfg.destroy).pack(pady=10)
     def check(self, event=None):
@@ -379,7 +438,7 @@ class caja():
                 self.passw.destroy()
                 self.ppbind()             
                 if status==1:
-                    self.cancelar_anular(1)    
+                    self.cancelar_anular(1,achieve=1)    
                 elif status==0:
                     self.app.bind("<Return>", lambda event: self.cancelar_anular(event=event, status=0))
                     self.app.bind("<+>", lambda event: self.almacen(event=event, type= "Almacén",status=2))
@@ -591,7 +650,7 @@ class caja():
             self.resume, 
             text='Facturacion', 
             style="Custom.TButton",
-            command=lambda: self.facturacion_click(event)
+            command=lambda: self.facturacion_click(status=1, event=event)
         )
         self.R_efectivo_valor.place(relx= 0.3244, rely= 0.3945, relwidth=0.17)
         self.R_PagoElec_valor.place(relx= 0.3244, rely= 0.4557, relwidth=0.17)
@@ -720,13 +779,14 @@ class caja():
         self.R_efectivo_valor.bind("<Return>", lambda event : self.enter_as_tab(event))
         self.R_PagoElec_valor.bind("<Return>", lambda event : self.enter_as_tab(event))
         self.R_tarjeta_valor.bind("<Return>", lambda event: (self.resume.focus_force(), self.resume.destroy(), 
-                                                             self.ppbind(),self.call("tique", event)))
+                                                             self.ppbind(),self.facturacion_click(status=1, event=event)))
         self.R_efectivo_valor.bind("<FocusOut>", lambda event: self.sim(1, event))
         self.R_PagoElec_valor.bind("<FocusOut>", lambda event: self.sim(2, event))
         self.R_tarjeta_valor.bind("<FocusOut>", lambda event: self.sim(3, event))
         self.R_recargo_valor.bind("<FocusOut>", lambda event: bon(event))
         self.R_bonificacion_valor.bind("<FocusOut>", lambda event: bon(event))
-        self.app.bind("<F4>", lambda event: (self.resume.destroy(), self.ppbind(),self.call("tique", event)))
+        self.app.bind("<F4>", lambda event: (self.resume.destroy(), self.ppbind(),self.facturacion_click(status=1, event=event)))
+        self.app.bind("<F5>", lambda event: (self.resume.destroy(), self.ppbind(),self.facturacion_click(status=2, event=event)))
         self.app.bind("<Escape>", lambda event: (self.resume.destroy(), self.ppbind()))
     def call(self, command,extra=0, extra1=0, event=0):
         if command == 'tique':
@@ -903,34 +963,71 @@ class caja():
             self.sales.config(background='#F1EAD7')
             self.sales.place(relx=0, rely=0, relwidth=1, relheight=1)
             self.SalesBind()
-            tb.Label(self.sales, background= '#F1EAD7', foreground= '#847C67', text="Caja:", font=("Arial", int(30*self.Bend.font))).place(relx=0.05, rely=0.05, relwidth=0.2, relheight=0.05)
-            tb.Label(self.sales, background= '#F1EAD7', foreground= '#847C67', text="Fecha: ", font=("Arial", int(30*self.Bend.font))).place(relx=0.35, rely=0.05, relwidth=0.2, relheight=0.05)
-            tb.Label(self.sales, background= '#F1EAD7', foreground= '#847C67', text="Monto Ac.", font=("Arial", int(30*self.Bend.font))).place(relx=0.05, rely=0.15, relwidth=0.2, relheight=0.05)
-            tb.Label(self.sales, background= '#F1EAD7', foreground= '#847C67', text="Facturado SF", font=("Arial", int(30*self.Bend.font))).place(relx=0.3, rely=0.15, relwidth=0.2, relheight=0.05)
-            tb.Label(self.sales, background= '#F1EAD7', foreground= '#847C67', text="Total", font=("Arial", int(30*self.Bend.font))).place(relx=0.55, rely=0.15, relwidth=0.2, relheight=0.05)
-            tb.Label(self.sales, background= '#F1EAD7', foreground= '#847C67', text="Efectivo:", font=("Arial", int(30*self.Bend.font))).place(relx=0.05, rely=0.25, relwidth=0.2, relheight=0.05)
-            tb.Label(self.sales, background= '#F1EAD7', foreground= '#847C67', text="$4000", font=("Arial", int(30*self.Bend.font))).place(relx=0.3, rely=0.25, relwidth=0.2, relheight=0.05)
-            tb.Label(self.sales, background= '#F1EAD7', foreground= '#847C67', text="$4000", font=("Arial", int(30*self.Bend.font))).place(relx=0.55, rely=0.25, relwidth=0.2, relheight=0.05)
-
-            tb.Label(self.sales, background= '#F1EAD7', foreground= '#847C67', text="Pago Elect:", font=("Arial", int(30*self.Bend.font))).place(relx=0.05, rely=0.35, relwidth=0.2, relheight=0.05)
-            tb.Label(self.sales, background= '#F1EAD7', foreground= '#847C67', text="$4000", font=("Arial", int(30*self.Bend.font))).place(relx=0.3, rely=0.35, relwidth=0.2, relheight=0.05)
-            tb.Label(self.sales, background= '#F1EAD7', foreground= '#847C67', text="$4000", font=("Arial", int(30*self.Bend.font))).place(relx=0.55, rely=0.35, relwidth=0.2, relheight=0.05)
-
-            tb.Label(self.sales, background= '#F1EAD7', foreground= '#847C67', text="Tarjeta:", font=("Arial", int(30*self.Bend.font))).place(relx=0.05, rely=0.45, relwidth=0.2, relheight=0.05)
-            tb.Label(self.sales, background= '#F1EAD7', foreground= '#847C67', text="$4000", font=("Arial", int(30*self.Bend.font))).place(relx=0.3, rely=0.45, relwidth=0.2, relheight=0.05)
-            tb.Label(self.sales, background= '#F1EAD7', foreground= '#847C67', text="$4000", font=("Arial", int(30*self.Bend.font))).place(relx=0.55, rely=0.45, relwidth=0.2, relheight=0.05)
-
-            tb.Label(self.sales, background= '#F1EAD7', foreground= '#847C67', text="Total:", font=("Arial", int(30*self.Bend.font))).place(relx=0.05, rely=0.55, relwidth=0.2, relheight=0.05)
-            tb.Label(self.sales, background= '#F1EAD7', foreground= '#847C67', text="$4000", font=("Arial", int(30*self.Bend.font))).place(relx=0.3, rely=0.55, relwidth=0.2, relheight=0.05)
-            tb.Label(self.sales, background= '#F1EAD7', foreground= '#847C67', text="$4000", font=("Arial", int(30*self.Bend.font))).place(relx=0.55, rely=0.55, relwidth=0.2, relheight=0.05)
+           
+            # Add labels for daily sales data
+            tb.Label(self.sales, text="Ventas Diarias", background='#F1EAD7', 
+                    font=("arial", int(30 * self.Bend.font), "bold")).place(relx=0.3, rely=0.05)
+            
+            # Get today's date
+            today = datetime.now().strftime('%Y-%m-%d')
+            
+            # Query today's sales data
+            self.Bend.cursor.execute("""
+                SELECT 
+                    IFNULL(SUM(Facturated), 0) as facturado,
+                    IFNULL(SUM(Non_Facturated), 0) as no_facturado,
+                    IFNULL(SUM(Card), 0) as tarjeta,
+                    IFNULL(SUM(Cash), 0) as efectivo,
+                    IFNULL(SUM(Virtualp), 0) as pago_virtual
+                FROM Caja1 
+                WHERE DATE(Date) = %s
+            """, (today,))
+            
+            result = self.Bend.cursor.fetchone()
+            if not result:
+                result = [0, 0, 0, 0, 0]  # Default values if no data
+            
+            # Calculate total sales (facturado + no facturado)
+            total_ventas = result[0] + result[1]
+            
+            # Create labels for each metric
+            y_position = 0.15
+            metrics = [
+                ("Facturado:", result[0]),
+                ("No Facturado:", result[1]),
+                ("Tarjeta:", result[2]),
+                ("Efectivo:", result[3]),
+                ("Virtual:", result[4]),
+                ("", ""),  # Espacio en blanco para separación
+                ("TOTAL VENTAS:", total_ventas)
+            ]
+            
+            for label, value in metrics:
+                if label == "":  # Skip empty label (spacer)
+                    y_position += 0.08
+                    continue
+                    
+                if label == "TOTAL VENTAS:":
+                    # Destacar el total con un estilo diferente
+                    tb.Label(self.sales, text=label, background='#F1EAD7', 
+                            font=("arial", int(25 * self.Bend.font), "bold")).place(relx=0.25, rely=y_position)
+                    tb.Label(self.sales, text=f"$ {format(float(value), ',.2f')}", background='#F1EAD7', 
+                            font=("arial", int(25 * self.Bend.font), "bold")).place(relx=0.55, rely=y_position)
+                else:
+                    tb.Label(self.sales, text=label, background='#F1EAD7', 
+                            font=("arial", int(20 * self.Bend.font))).place(relx=0.25, rely=y_position)
+                    tb.Label(self.sales, text=f"$ {format(float(value), ',.2f')}", background='#F1EAD7', 
+                            font=("arial", int(20 * self.Bend.font))).place(relx=0.55, rely=y_position)
+                y_position += 0.08  # Increased spacing between items
+            
             cierre_total_btn = tb.Button(self.sales, text="Cierre Total [z]", style="Custom.TButton", command=lambda: self.cierre("z"))    
             cierre_total_btn.place(relx=0.05, rely=0.9, relwidth=0.15, relheight=0.05)
             cierre_parcial_btn = tb.Button(self.sales, text="Cierre Parcial [x]", style="Custom.TButton",command=lambda:(self.cierre("x")))
             cierre_parcial_btn.place(relx=0.35, rely=0.9, relwidth=0.15, relheight=0.05)
             auditoria_btn = tb.Button(self.sales, text="Auditoria", style="Custom.TButton", command=lambda: self.Auditoria())
             auditoria_btn.place(relx=0.65, rely=0.9, relwidth=0.15, relheight=0.05)
-        except:
-            self.mostrar_error("Error Fatal")
+        except Exception as e:
+            self.mostrar_error(f"Error al cargar ventas diarias: {str(e)}")
     def cierre(self, status, event=0):
             repuesta= messagebox.askokcancel(f"cierre {status}", f"Desea hacer un Cierre de caja {status}")
             if repuesta:
@@ -1005,12 +1102,20 @@ class caja():
         # Calculate total payment
         total_payment = cash + card + virtual
         
-        # If only cash payment, adjust to subtotal
-        if tcash == 1 and tcard == 0 and tvirtual == 0:
-            cash = self.Bend.subtotal
-        # If combined payment, validate total
+        # If only one payment method is used, accept any amount
+        if (tcash == 1 and tcard == 0 and tvirtual == 0) or \
+           (tcash == 0 and tcard == 1 and tvirtual == 0) or \
+           (tcash == 0 and tcard == 0 and tvirtual == 1):
+            # For single payment method, use the total as the payment amount
+            if tcash == 1:
+                cash = self.Bend.subtotal
+            elif tcard == 1:
+                card = self.Bend.subtotal
+            else:
+                virtual = self.Bend.subtotal
+        # For combined payments, validate total
         elif total_payment != self.Bend.subtotal:
-            self.mostrar_error("La suma de los pagos debe ser igual al total", 1)
+            self.mostrar_error("La suma de los pagos debe ser igual al total", 2)
             return
         
         # Update Caja1 table
@@ -1031,6 +1136,22 @@ class caja():
         if status == 1:
             self.call("tique", event)
         elif status == 2:
+            printer_name = self.Bend.datos.get('Printer', '')  # Obtener nombre de impresora
+            if printer_name:  # Solo imprimir si hay una impresora configurada
+                # Preparar lista de productos para imprimir ticket
+                productos_para_imprimir = []
+                for item in self.Bend.tique:
+                    descripcion = item[0]
+                    precio = item[1]
+                    cantidad = item[3]
+                    # Si es una anulación (cantidad negativa)
+                    if cantidad < 0:
+                        productos_para_imprimir.append((f"ANULACIÓN - {descripcion}", precio, abs(cantidad)))
+                    else:
+                        productos_para_imprimir.append((descripcion, precio, cantidad))
+                
+                # Imprimir ticket
+                self.Bend.imprimir_ticket(productos_para_imprimir, nombre_impresora=printer_name)
             self.cancelar_anular(status=1)
 
 caja()

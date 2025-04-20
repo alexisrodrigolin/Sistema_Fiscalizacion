@@ -1,14 +1,125 @@
 import mysql.connector as sql
-#import win32com.client as winc
+import win32print
+import win32con
+import win32com.client as winc
 import json
 import os
+from datetime import datetime, timedelta
+from supabase import create_client
+import threading
+import time
 
 class Logic:
     def __init__(self):
         config_path = os.path.join(os.path.dirname(__file__), "Configuration.json")
         with open(config_path, "r") as archivo:
             self.datos = json.load(archivo)
-        self.font= float(self.datos['Font'])
+        
+        # Initialize Supabase client (optional)
+        try:
+            supabase_config_path = os.path.join(os.path.dirname(__file__), "supabase_config.json")
+            with open(supabase_config_path, "r") as archivo:
+                supabase_config = json.load(archivo)
+            
+            self.supabase = create_client(
+                supabase_config["supabase_url"],
+                supabase_config["supabase_key"]
+            )
+        except Exception as e:
+            print(f"Warning: Supabase configuration not loaded: {str(e)}")
+            self.supabase = None
+        
+        self.font = float(self.datos['Font'])
+        
+        # Start background sync thread only if Supabase is configured
+        if self.supabase:
+            self.sync_thread = threading.Thread(target=self._background_sync, daemon=True)
+            self.sync_thread.start()
+
+    def _background_sync(self):
+        """Background thread that periodically syncs MySQL data to Supabase"""
+        while True:
+            try:
+                self.sync_with_supabase()
+            except Exception as e:
+                print(f"Error in background sync: {str(e)}")
+            time.sleep(1800)  # Wait 30 minutes (1800 seconds) before next sync attempt
+
+    def sync_with_supabase(self):
+        """Synchronize MySQL data with Supabase and maintain 730 days of history"""
+        # Skip if Supabase is not configured
+        if not self.supabase:
+            return False
+            
+        try:
+            # Ensure database connection is established
+            if not hasattr(self, 'cursor'):
+                self.Conection()
+            
+            # First, clean up old records in Supabase (older than 730 days)
+            cutoff_date = (datetime.now() - timedelta(days=1095)).strftime('%Y-%m-%d')
+            self.supabase.table('daily_sales').delete().lt('date', cutoff_date).execute()
+            
+            # Get all records from MySQL from the last 7 days
+            self.cursor.execute("""
+                SELECT 
+                    DATE(CONVERT_TZ(Date, @@session.time_zone, '+00:00')) as date,
+                    SUM(Facturated) as facturated,
+                    SUM(Non_Facturated) as non_facturated,
+                    SUM(Card) as card,
+                    SUM(Cash) as cash,
+                    SUM(Virtualp) as virtual_total,
+                    SUM(Tcard) as tcard,
+                    SUM(Tcash) as tcash,
+                    SUM(Tvirtual) as tvirtual,
+                    SUM(TCancelled) as tcancelled,
+                    SUM(Cancelled) as cancelled
+                FROM Caja1 
+                WHERE Date >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
+                GROUP BY DATE(CONVERT_TZ(Date, @@session.time_zone, '+00:00'))
+            """)
+            
+            mysql_records = self.cursor.fetchall()
+            
+            for record in mysql_records:
+                try:
+                    # Ensure date is in UTC and format as YYYY-MM-DD
+                    date_str = record[0].strftime('%Y-%m-%d')
+                    print(f"Processing date: {date_str}")  # Debug log
+                    
+                    # Check if record exists in Supabase
+                    result = self.supabase.table('daily_sales').select('*').eq('date', date_str).execute()
+                    
+                    data = {
+                        'invoiced_total': float(record[1]) if record[1] else 0,
+                        'non_invoiced_total': float(record[2]) if record[2] else 0,
+                        'card_total': float(record[3]) if record[3] else 0,
+                        'cash_total': float(record[4]) if record[4] else 0,
+                        'virtual_total': float(record[5]) if record[5] else 0,
+                        'card_transactions': int(record[6]) if record[6] else 0,
+                        'cash_transactions': int(record[7]) if record[7] else 0,
+                        'virtual_transactions': int(record[8]) if record[8] else 0,
+                        'cancelled_transactions': int(record[9]) if record[9] else 0,
+                        'cancelled_total': float(record[10]) if record[10] else 0,
+                        'updated_at': datetime.utcnow().isoformat()
+                    }
+                    
+                    if result.data:
+                        # Update existing record
+                        self.supabase.table('daily_sales').update(data).eq('date', date_str).execute()
+                    else:
+                        # Insert new record
+                        data['date'] = date_str
+                        data['created_at'] = datetime.utcnow().isoformat()
+                        self.supabase.table('daily_sales').insert(data).execute()
+                except Exception as e:
+                    print(f"Error processing record for date {date_str}: {str(e)}")
+                    continue
+                
+            return True
+        except Exception as e:
+            print(f"Error syncing with Supabase: {str(e)}")
+            return False
 
     def writeCfg(self):
         config_path = os.path.join(os.path.dirname(__file__), "Configuration.json")
@@ -40,7 +151,76 @@ class Logic:
         }
         self.nitem=0
         
+    
+    def imprimir_ticket(productos, nombre_impresora=None):
+        # Configuración precisa
+        ANCHO_TICKET = 48
+        PRICE_WIDTH = 12  # Ancho fijo para precios
+        DESC_WIDTH = ANCHO_TICKET - PRICE_WIDTH - 1  # 35 caracteres
+        TRUNCATE_LENGTH = DESC_WIDTH - 3  # 32 caracteres antes de "..."
+    # Obtener la fecha y hora actual
+        now = datetime.now()
+
+        # Formatear la fecha y hora en un formato compacto
         
+        formatted_time = now.strftime("%Y-%m-%d %H:%M:%S")  
+        ticket = []
+        ticket.append("\x1B@")  # Inicializar impresora
+        ticket.append("\x1B!\x02")  # Fuente pequeña
+        
+        # Encabezado
+        ticket.append("\x1B\x61\x01")  # Centrado
+        ticket.append("SUPERMERCADO \n")
+        ticket.append("\x1B\x61\x00")  # Alinear izquierda
+        ticket.append("=" * ANCHO_TICKET + "\n")
+        ticket.append(f"{formatted_time}\n\n")
+        # Función de truncamiento exacto
+        def truncar_descripcion(texto):
+            if len(texto) > DESC_WIDTH:
+                return texto[:TRUNCATE_LENGTH] + "..."
+            return texto.ljust(DESC_WIDTH)  # Rellena con espacios si es corto
+        
+        # Procesar productos
+        for desc, precio_unitario, cantidad in productos:
+            total = precio_unitario * cantidad
+            
+            # Línea de cantidad y precio unitario
+            if cantidad > 1:
+                linea_cantidad = f"{cantidad}x ${precio_unitario:>10,.2f}"
+                ticket.append(linea_cantidad.ljust(ANCHO_TICKET) + "\n")
+            
+            # Línea de descripción y precio
+            desc_truncada = truncar_descripcion(desc)
+            precio_str = f"${total:>{PRICE_WIDTH-1},.2f}" if cantidad > 1 else f"${precio_unitario:>{PRICE_WIDTH-1},.2f}"
+            linea_producto = f"{desc_truncada} {precio_str}"
+            ticket.append(linea_producto + "\n")
+
+        ticket.append("=" * ANCHO_TICKET + "\n")   
+        # Total general
+        total_general = sum(p[1] * p[2] for p in productos)
+        ticket.append(f"{'TOTAL:'.ljust(DESC_WIDTH)} ${total_general:>{PRICE_WIDTH-1},.2f}\n")
+        
+        # Pie del ticket
+        ticket.append("\n\x1B\x61\x01")  # Centrado
+        ticket.append("GRACIAS POR SU COMPRA\n")
+        ticket.append("\n" * 5)  # Espacio para corte
+        ticket.append("\x1D\x56\x41\x05")  # Corte parcial
+        
+        # Impresión
+        if not nombre_impresora:
+            nombre_impresora = win32print.GetDefaultPrinter()
+        
+        hprinter = win32print.OpenPrinter(nombre_impresora)
+        try:
+            win32print.StartDocPrinter(hprinter, 1, ("Ticket", None, "RAW"))
+            win32print.StartPagePrinter(hprinter)
+            contenido = "".join(ticket).encode('utf-8', 'ignore')
+            win32print.WritePrinter(hprinter, contenido)
+        finally:
+            win32print.EndPagePrinter(hprinter)
+            win32print.EndDocPrinter(hprinter)
+            win32print.ClosePrinter(hprinter)
+            
     def suma(self,Descripcion='',Plu='',Precio= 0,Cantidad=0 , cantOF=1, refresh= 0):
         
         if refresh ==1:
@@ -97,7 +277,7 @@ class Logic:
                     Non_Facturated int DEFAULT NULL,
                     Card int DEFAULT NULL,
                     Cash int DEFAULT NULL,
-                    Virtual int DEFAULT NULL,
+                    Virtualp int DEFAULT NULL,
                     Tcard int DEFAULT NULL,
                     Tcash int DEFAULT NULL,
                     Tvirtual int DEFAULT NULL,
@@ -109,15 +289,15 @@ class Logic:
             """)
             
             # Get current date
-            from datetime import datetime, timedelta
-            current_date = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            current_date = datetime.now()
+            current_date_str = current_date.strftime('%Y-%m-%d %H:%M:%S')
             
             # Delete records older than 7 days
-            seven_days_ago = (datetime.now() - timedelta(days=7)).strftime('%Y-%m-%d %H:%M:%S')
+            seven_days_ago = (current_date - timedelta(days=7)).strftime('%Y-%m-%d %H:%M:%S')
             self.cursor.execute("DELETE FROM Caja1 WHERE Date < %s", (seven_days_ago,))
             
             # Check if record exists for today
-            self.cursor.execute("SELECT * FROM Caja1 WHERE Date = %s", (current_date,))
+            self.cursor.execute("SELECT * FROM Caja1 WHERE Date = %s", (current_date_str,))
             result = self.cursor.fetchone()
             
             if result:
@@ -128,22 +308,30 @@ class Logic:
                         Non_Facturated = Non_Facturated + %s,
                         Card = Card + %s,
                         Cash = Cash + %s,
-                        Virtual = Virtual + %s,
+                        Virtualp = Virtualp + %s,
                         Tcard = Tcard + %s,
                         Tcash = Tcash + %s,
                         Tvirtual = Tvirtual + %s,
                         TCancelled = TCancelled + %s,
                         Cancelled = Cancelled + %s
                     WHERE Date = %s
-                """, (facturated, non_facturated, card, cash, virtual, tcard, tcash, tvirtual, tcancelled, cancelled, current_date))
+                """, (facturated, non_facturated, card, cash, virtual, tcard, tcash, tvirtual, tcancelled, cancelled, current_date_str))
             else:
                 # Insert new record
                 self.cursor.execute("""
-                    INSERT INTO Caja1 (Date, Facturated, Non_Facturated, Card, Cash, Virtual, Tcard, Tcash, Tvirtual, TCancelled, Cancelled)
+                    INSERT INTO Caja1 (Date, Facturated, Non_Facturated, Card, Cash, Virtualp, Tcard, Tcash, Tvirtual, TCancelled, Cancelled)
                     VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-                """, (current_date, facturated, non_facturated, card, cash, virtual, tcard, tcash, tvirtual, tcancelled, cancelled))
+                """, (current_date_str, facturated, non_facturated, card, cash, virtual, tcard, tcash, tvirtual, tcancelled, cancelled))
             
             self.mydb.commit()
+            
+            # Try to sync with Supabase in the background only if configured
+            if self.supabase:
+                try:
+                    threading.Thread(target=self.sync_with_supabase, daemon=True).start()
+                except Exception as e:
+                    print(f"Background sync failed: {str(e)}")
+            
             return True
         except Exception as e:
             print(f"Error updating Caja1: {str(e)}")

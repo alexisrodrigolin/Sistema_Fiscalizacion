@@ -7,5 +7,6 @@
     "Baudrate": "9600",
     "AdminPass": "888888",
     "EntryPass": "1",
-    "SuperPass": "0"
+    "SuperPass": "0",
+    "Printer": ""
 }

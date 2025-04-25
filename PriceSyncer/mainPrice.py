@@ -14,7 +14,7 @@ import sys
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4, landscape
 from reportlab.lib.units import cm
-from reportlab.graphics.barcode import code128
+from reportlab.graphics.barcode import code128,code39,code93,usps, usps4s, ecc200datamatrix,eanbc   
 from reportlab.lib.colors import black, red
 from reportlab.platypus import Paragraph
 from reportlab.lib.styles import ParagraphStyle

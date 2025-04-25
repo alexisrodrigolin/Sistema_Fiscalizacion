@@ -3,10 +3,29 @@ from datetime import date
 import json
 from mysql.connector import Error
 import os
+import sys
 
 class connection():
     def __init__(self):
-        config_path = os.path.join(os.path.dirname(__file__), "PriceConfiguration.json")
+        # Get the base path for configuration files
+        if getattr(sys, 'frozen', False):
+            # Running as compiled executable
+            base_path = os.path.dirname(sys.executable)
+            # When running as a onefile executable, the file is extracted to a temp directory
+            if hasattr(sys, '_MEIPASS'):
+                base_path = sys._MEIPASS
+        else:
+            # Running as script
+            base_path = os.path.dirname(__file__)
+
+        # Try to load configuration from the executable directory first
+        config_path = os.path.join(base_path, "PriceConfiguration.json")
+        if not os.path.exists(config_path):
+            # If not found, try the current working directory
+            config_path = os.path.join(os.getcwd(), "PriceConfiguration.json")
+            if not os.path.exists(config_path):
+                raise FileNotFoundError(f"PriceConfiguration.json not found in {base_path} or {os.getcwd()}")
+
         with open(config_path, "r") as archivo:
             self.datos = json.load(archivo)
         self.font= float(self.datos['Font'])

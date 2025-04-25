@@ -1,9 +1,10 @@
 import mysql.connector as sql
-import win32print
-import win32con
-import win32com.client as winc
+# import win32print
+# import win32con
+# import win32com.client as winc
 import json
 import os
+import sys
 from datetime import datetime, timedelta
 from supabase import create_client
 import threading
@@ -11,20 +12,44 @@ import time
 
 class Logic:
     def __init__(self):
-        config_path = os.path.join(os.path.dirname(__file__), "Configuration.json")
+        # Get the base path for configuration files
+        if getattr(sys, 'frozen', False):
+            # Running as compiled executable
+            base_path = os.path.dirname(sys.executable)
+            # When running as a onefile executable, the file is extracted to a temp directory
+            if hasattr(sys, '_MEIPASS'):
+                base_path = sys._MEIPASS
+        else:
+            # Running as script
+            base_path = os.path.dirname(__file__)
+
+        # Try to load configuration from the executable directory first
+        config_path = os.path.join(base_path, "Configuration.json")
+        if not os.path.exists(config_path):
+            # If not found, try the current working directory
+            config_path = os.path.join(os.getcwd(), "Configuration.json")
+            if not os.path.exists(config_path):
+                raise FileNotFoundError(f"Configuration.json not found in {base_path} or {os.getcwd()}")
+
         with open(config_path, "r") as archivo:
             self.datos = json.load(archivo)
         
         # Initialize Supabase client (optional)
         try:
-            supabase_config_path = os.path.join(os.path.dirname(__file__), "supabase_config.json")
-            with open(supabase_config_path, "r") as archivo:
-                supabase_config = json.load(archivo)
+            supabase_config_path = os.path.join(base_path, "supabase_config.json")
+            if not os.path.exists(supabase_config_path):
+                supabase_config_path = os.path.join(os.getcwd(), "supabase_config.json")
             
-            self.supabase = create_client(
-                supabase_config["supabase_url"],
-                supabase_config["supabase_key"]
-            )
+            if os.path.exists(supabase_config_path):
+                with open(supabase_config_path, "r") as archivo:
+                    supabase_config = json.load(archivo)
+                
+                self.supabase = create_client(
+                    supabase_config["supabase_url"],
+                    supabase_config["supabase_key"]
+                )
+            else:
+                self.supabase = None
         except Exception as e:
             print(f"Warning: Supabase configuration not loaded: {str(e)}")
             self.supabase = None
@@ -122,9 +147,21 @@ class Logic:
             return False
 
     def writeCfg(self):
-        config_path = os.path.join(os.path.dirname(__file__), "Configuration.json")
+        # Get the base path for configuration files
+        if getattr(sys, 'frozen', False):
+            # Running as compiled executable
+            base_path = os.path.dirname(sys.executable)
+            # When running as a onefile executable, the file is extracted to a temp directory
+            if hasattr(sys, '_MEIPASS'):
+                base_path = sys._MEIPASS
+        else:
+            # Running as script
+            base_path = os.path.dirname(__file__)
+
+        config_path = os.path.join(base_path, "Configuration.json")
         with open(config_path, "w") as archivo:
-            json.dump(self.datos,archivo, indent=4)
+            json.dump(self.datos, archivo, indent=4)
+
     def Conection(self):
 
         self.mydb = sql.connect( 

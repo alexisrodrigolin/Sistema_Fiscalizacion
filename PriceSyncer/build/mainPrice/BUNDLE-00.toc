@@ -1,0 +1,4 @@
+([('mainPrice',
+   '/Users/rok/Documents/project/Sistema de '
+   'Fiscalizacion/PriceSyncer/dist/mainPrice',
+   'EXECUTABLE')],)

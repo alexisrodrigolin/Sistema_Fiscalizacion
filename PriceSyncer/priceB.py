@@ -8,27 +8,38 @@ import sys
 class connection():
     def __init__(self):
         # Get the base path for configuration files
-        if getattr(sys, 'frozen', False):
-            # Running as compiled executable
-            base_path = os.path.dirname(sys.executable)
-            # When running as a onefile executable, the file is extracted to a temp directory
-            if hasattr(sys, '_MEIPASS'):
-                base_path = sys._MEIPASS
-        else:
-            # Running as script
-            base_path = os.path.dirname(__file__)
+        local_dir = os.path.join(os.getenv("LOCALAPPDATA"), "RSystems")
+        os.makedirs(local_dir, exist_ok=True)  # Crear la carpeta si no existe
 
-        # Try to load configuration from the executable directory first
-        config_path = os.path.join(base_path, "PriceConfiguration.json")
+        # Ruta del archivo de configuración
+        config_path = os.path.join(local_dir, "Configuration.json")
+
+        # Si no existe el archivo, crearlo con valores por defecto
         if not os.path.exists(config_path):
-            # If not found, try the current working directory
-            config_path = os.path.join(os.getcwd(), "PriceConfiguration.json")
-            if not os.path.exists(config_path):
-                raise FileNotFoundError(f"PriceConfiguration.json not found in {base_path} or {os.getcwd()}")
+            default_config = {
+                "Db": "localhost",
+                "User": "root",
+                "Password": "",
+                "Font": "0.8",
+                "Com": "3",
+                "Baudrate": "9600",
+                "AdminPass": "888888",
+                "EntryPass": "1",
+                "SuperPass": "0",
+                "Printer": "",
+                "Supabase_url": "",
+                "Supabase_key": ""
+            }
+            with open(config_path, "w") as f:
+                json.dump(default_config, f, indent=4)
+            print(f"Archivo de configuración creado en: {config_path}")
+        else:
+            print(f"Archivo de configuración encontrado en: {config_path}")
 
+        # Cargar la configuración
         with open(config_path, "r") as archivo:
             self.datos = json.load(archivo)
-        self.font= float(self.datos['Font'])
+        self.font = float(self.datos['Font'])
     def Connection(self):
         self.mydb = sql.connect( 
         host=f"{self.datos['Db']}",

@@ -13,40 +13,45 @@ import time
 class Logic:
     def __init__(self):
         # Get the base path for configuration files
-        if getattr(sys, 'frozen', False):
-            # Running as compiled executable
-            base_path = os.path.dirname(sys.executable)
-            # When running as a onefile executable, the file is extracted to a temp directory
-            if hasattr(sys, '_MEIPASS'):
-                base_path = sys._MEIPASS
-        else:
-            # Running as script
-            base_path = os.path.dirname(__file__)
+        # Ruta a %LOCALAPPDATA%\MiApp
+        local_dir = os.path.join(os.getenv("LOCALAPPDATA"), "RSystems")
+        os.makedirs(local_dir, exist_ok=True)  # Crear la carpeta si no existe
 
-        # Try to load configuration from the executable directory first
-        config_path = os.path.join(base_path, "Configuration.json")
+        # Ruta del archivo de configuración
+        config_path = os.path.join(local_dir, "Configuration.json")
+
+        # Si no existe el archivo, crearlo con valores por defecto
         if not os.path.exists(config_path):
-            # If not found, try the current working directory
-            config_path = os.path.join(os.getcwd(), "Configuration.json")
-            if not os.path.exists(config_path):
-                raise FileNotFoundError(f"Configuration.json not found in {base_path} or {os.getcwd()}")
+            default_config = {
+                "Db": "localhost",
+                "User": "root",
+                "Password": "",
+                "Font": "0.8",
+                "Com": "3",
+                "Baudrate": "9600",
+                "AdminPass": "888888",
+                "EntryPass": "1",
+                "SuperPass": "0",
+                "Printer": "",
+                "Supabase_url": "",
+                "Supabase_key": ""
+            }
+            with open(config_path, "w") as f:
+                json.dump(default_config, f, indent=4)
+            print(f"Archivo de configuración creado en: {config_path}")
+        else:
+            print(f"Archivo de configuración encontrado en: {config_path}")
 
+        # Cargar la configuración
         with open(config_path, "r") as archivo:
             self.datos = json.load(archivo)
         
         # Initialize Supabase client (optional)
         try:
-            supabase_config_path = os.path.join(base_path, "supabase_config.json")
-            if not os.path.exists(supabase_config_path):
-                supabase_config_path = os.path.join(os.getcwd(), "supabase_config.json")
-            
-            if os.path.exists(supabase_config_path):
-                with open(supabase_config_path, "r") as archivo:
-                    supabase_config = json.load(archivo)
-                
+            if self.datos.get("Supabase_url") and self.datos.get("Supabase_key"):
                 self.supabase = create_client(
-                    supabase_config["supabase_url"],
-                    supabase_config["supabase_key"]
+                    self.datos["Supabase_url"],
+                    self.datos["Supabase_key"]
                 )
             else:
                 self.supabase = None
@@ -148,19 +153,32 @@ class Logic:
 
     def writeCfg(self):
         # Get the base path for configuration files
-        if getattr(sys, 'frozen', False):
-            # Running as compiled executable
-            base_path = os.path.dirname(sys.executable)
-            # When running as a onefile executable, the file is extracted to a temp directory
-            if hasattr(sys, '_MEIPASS'):
-                base_path = sys._MEIPASS
-        else:
-            # Running as script
-            base_path = os.path.dirname(__file__)
-
-        config_path = os.path.join(base_path, "Configuration.json")
-        with open(config_path, "w") as archivo:
-            json.dump(self.datos, archivo, indent=4)
+        local_dir = os.path.join(os.getenv("LOCALAPPDATA"), "RSystems")
+        os.makedirs(local_dir, exist_ok=True)
+        
+        # Ruta del archivo de configuración
+        config_path = os.path.join(local_dir, "Configuration.json")
+        
+        # Guardar la configuración actualizada
+        with open(config_path, "w") as f:
+            json.dump(self.datos, f, indent=4)
+        
+        # Reinicializar Supabase si las credenciales están presentes
+        try:
+            if self.datos.get("Supabase_url") and self.datos.get("Supabase_key"):
+                self.supabase = create_client(
+                    self.datos["Supabase_url"],
+                    self.datos["Supabase_key"]
+                )
+                # Reiniciar el hilo de sincronización si es necesario
+                if not hasattr(self, 'sync_thread') or not self.sync_thread.is_alive():
+                    self.sync_thread = threading.Thread(target=self._background_sync, daemon=True)
+                    self.sync_thread.start()
+            else:
+                self.supabase = None
+        except Exception as e:
+            print(f"Warning: Failed to reinitialize Supabase: {str(e)}")
+            self.supabase = None
 
     def Conection(self):
 

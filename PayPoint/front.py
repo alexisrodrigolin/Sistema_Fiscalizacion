@@ -15,12 +15,10 @@ from supabase import create_client
 class caja():
 
     def __init__(self, *args, **kwargs):
-
         self.app = tb.Window(title="PayPoint", size=[1024, 768])
         self.app.config(background='#F1EAD7')
         self.app.state('zoomed')
         self.Bend = back.Logic() 
-
 
         self.style = tb.Style()
         self.style.configure("Custom.TButton",
@@ -62,12 +60,8 @@ class caja():
         self.create_widget_menu()
         self.app.bind("<Return>", self.check)
         self.columnas_rows(col=8, row=15)
-
-
         
         self.app.mainloop()
-
-
 
     def create_widget_menu(self):
         self.numberCaja = tb.Label(self.app, text="- Caja 1",
@@ -165,26 +159,23 @@ class caja():
         except:
             self.mostrar_error("Error Fatal")
     def conf(self, status=0):
-        cfg= tk.Frame(self.app, )
+        cfg = tk.Frame(self.app)
         cfg.config(background='#F1EAD7')
         cfg.place(relx=0, rely=0, relheight=1, relwidth=1)
         def save():
-            repuestas=messagebox.askokcancel('Save', 'Desea guardar los cambios?')
+            repuestas = messagebox.askokcancel('Save', 'Desea guardar los cambios?')
             if repuestas:
-                self.Bend.datos['Baudrate']= baudrate.get()
-                self.Bend.datos['Com']= com.get()
-                self.Bend.datos['AdminPass']= passwordA.get()
-                self.Bend.datos['EntryPass']= passwordE.get()
-                self.Bend.datos['SuperPass']= passwordS.get()
-                self.Bend.datos['Printer']= printer.get()  # Guardar nombre de impresora
-  
-                if status==1: 
-                    self.Bend.datos['Db']= Db.get()
-                    self.Bend.datos['User']= DbU.get()
-                    self.Bend.datos['Password']= DbP.get()[5:] 
-                    self.Bend.datos['Font']= font.get()
-                    
-                    # Save Supabase configuration if fields are not empty
+                self.Bend.datos['Baudrate'] = baudrate.get()
+                self.Bend.datos['Com'] = com.get()
+                self.Bend.datos['AdminPass'] = passwordA.get()
+                self.Bend.datos['EntryPass'] = passwordE.get()
+                self.Bend.datos['SuperPass'] = passwordS.get()
+                self.Bend.datos['Printer'] = printer.get()
+                if status == 1:
+                    self.Bend.datos['Db'] = Db.get()
+                    self.Bend.datos['User'] = DbU.get()
+                    self.Bend.datos['Password'] = DbP.get()[5:]
+                    self.Bend.datos['Font'] = font.get()
                     if supabase_url.get().strip() and supabase_key.get().strip():
                         supabase_config = {
                             "supabase_url": supabase_url.get().strip(),
@@ -193,8 +184,6 @@ class caja():
                         supabase_config_path = os.path.join(os.path.dirname(__file__), "supabase_config.json")
                         with open(supabase_config_path, "w") as f:
                             json.dump(supabase_config, f, indent=4)
-                        
-                        # Try to initialize Supabase client with new configuration
                         try:
                             self.Bend.supabase = create_client(
                                 supabase_config["supabase_url"],
@@ -205,73 +194,72 @@ class caja():
                             messagebox.showerror("Error", f"Error al conectar con Supabase: {str(e)}")
                             return
                     else:
-                        # If fields are empty, disable Supabase
                         self.Bend.supabase = None
                         if os.path.exists(os.path.join(os.path.dirname(__file__), "supabase_config.json")):
                             os.remove(os.path.join(os.path.dirname(__file__), "supabase_config.json"))
-                            
                 self.Bend.writeCfg()
                 cfg.destroy()
-            
-
-        tb.Label(cfg, text="COM:", background='#F1EAD7',font=("arial", int(30 * self.Bend.font))).pack()
-        com=tb.Entry(cfg,style="Custom.TButton",font=("arial", int(15 * self.Bend.font)),justify="center") 
-        com.pack()
-        tb.Label(cfg, text="Baudrate:", background='#F1EAD7',font=("arial", int(30 * self.Bend.font))).pack()
-        baudrate=tb.Entry(cfg,style="Custom.TButton",font=("arial", int(15 * self.Bend.font)),justify="center") 
-        baudrate.pack()
-        tb.Label(cfg, text="Contraseña Supervisor:", background='#F1EAD7',font=("arial", int(30 * self.Bend.font))).pack()
-        passwordS=tb.Entry(cfg,style="Custom.TButton",font=("arial", int(15 * self.Bend.font)),justify="center") 
-        passwordS.pack()
-        tb.Label(cfg, text="Contraseña Entrada:", background='#F1EAD7',font=("arial", int(30 * self.Bend.font))).pack()
-        passwordE=tb.Entry(cfg,style="Custom.TButton",font=("arial", int(15 * self.Bend.font)),justify="center") 
-        passwordE.pack()
-        tb.Label(cfg, text="Contraseña Administrador:", background='#F1EAD7',font=("arial", int(30 * self.Bend.font))).pack()
-        passwordA=tb.Entry(cfg,style="Custom.TButton",font=("arial", int(15 * self.Bend.font)),justify="center") 
-        passwordA.pack()
-        tb.Label(cfg, text="Nombre de Impresora:", background='#F1EAD7',font=("arial", int(30 * self.Bend.font))).pack()
-        printer=tb.Entry(cfg,style="Custom.TButton",font=("arial", int(15 * self.Bend.font)),justify="center") 
-        printer.pack()
-        tb.Label(cfg, text="#Mantener Precaución al manipular las configuraciones", background='#F1EAD7', foreground="grey").pack()
-
-        com.insert(0, self.Bend.datos['Com'])
-        baudrate.insert(0, self.Bend.datos['Baudrate'])
-        passwordA.insert(0, self.Bend.datos['AdminPass'])
-        passwordE.insert(0, self.Bend.datos['EntryPass'])
-        passwordS.insert(0, self.Bend.datos['SuperPass'])
-        printer.insert(0, self.Bend.datos['Printer'])
-
-        if status== 1:
-            tb.Label(cfg, text="Database:", background='#F1EAD7',font=("Arial", int(30 * self.Bend.font))).pack()
-            Db=tb.Entry(cfg,style="Custom.TButton",font=("Arial", int(15 * self.Bend.font)),justify="center") 
-            Db.pack()
-            tb.Label(cfg, text="Db User:", background='#F1EAD7',font=("arial", int(30 * self.Bend.font))).pack()
-            DbU=tb.Entry(cfg,style="Custom.TButton",font=("arial", int(15 * self.Bend.font)),justify="center") 
-            DbU.pack()
-            tb.Label(cfg, text="Db Password:", background='#F1EAD7',font=("arial", int(30 * self.Bend.font))).pack()
-            DbP=tb.Entry(cfg,style="Custom.TButton",font=("arial", int(15 * self.Bend.font)),justify="center") 
-            DbP.pack()
-            Db.insert(0, self.Bend.datos['Db'])
-            DbU.insert(0, self.Bend.datos['User'])
-            DbP.insert(0, f"dadds{self.Bend.datos['Password']}")
-            tb.Label(cfg, text="Font:", background='#F1EAD7',font=("arial", int(30 * self.Bend.font))).pack()
-            font=tb.Entry(cfg,style="Custom.TButton",font=("arial", int(15 * self.Bend.font)),justify="center") 
-            font.pack()
-            font.insert(0, self.Bend.datos['Font'])
-            
-            # Add Supabase configuration fields
-            tb.Label(cfg, text="Configuración de Supabase", background='#F1EAD7',font=("arial", int(30 * self.Bend.font), "bold")).pack(pady=20)
-            tb.Label(cfg, text="(Dejar vacío para deshabilitar)", background='#F1EAD7',font=("arial", int(15 * self.Bend.font)), foreground="grey").pack()
-            
-            tb.Label(cfg, text="Supabase URL:", background='#F1EAD7',font=("arial", int(30 * self.Bend.font))).pack()
-            supabase_url=tb.Entry(cfg,style="Custom.TButton",font=("arial", int(15 * self.Bend.font)),justify="center", width=50) 
-            supabase_url.pack()
-            
-            tb.Label(cfg, text="Supabase Key:", background='#F1EAD7',font=("arial", int(30 * self.Bend.font))).pack()
-            supabase_key=tb.Entry(cfg,style="Custom.TButton",font=("arial", int(15 * self.Bend.font)),justify="center", width=50) 
-            supabase_key.pack()
-            
-            # Load current Supabase configuration
+        font_size = int(20 * self.Bend.font)
+        entry_font_size = int(12 * self.Bend.font)
+        padding = 5
+        # Labels y entries en dos columnas
+        labels = [
+            ("COM:", 'Com'),
+            ("Baudrate:", 'Baudrate'),
+            ("Contraseña Supervisor:", 'SuperPass'),
+            ("Contraseña Entrada:", 'EntryPass'),
+            ("Contraseña Administrador:", 'AdminPass'),
+            ("Nombre de Impresora:", 'Printer'),
+        ]
+        entries = {}
+        for i, (label, key) in enumerate(labels):
+            col = 0 if i < 3 else 1
+            row = i if i < 3 else i - 3
+            tb.Label(cfg, text=label, background='#F1EAD7', font=("arial", font_size)).grid(row=row, column=col*2, padx=10, pady=padding, sticky="e")
+            entry = tb.Entry(cfg, style="Custom.TButton", font=("arial", entry_font_size), justify="center")
+            entry.grid(row=row, column=col*2+1, padx=10, pady=padding, sticky="w")
+            entry.insert(0, self.Bend.datos[key])
+            entries[key] = entry
+        com = entries['Com']
+        baudrate = entries['Baudrate']
+        passwordS = entries['SuperPass']
+        passwordE = entries['EntryPass']
+        passwordA = entries['AdminPass']
+        printer = entries['Printer']
+        tb.Label(cfg, text="#Mantener Precaución al manipular las configuraciones", background='#F1EAD7', foreground="grey", font=("arial", int(12 * self.Bend.font))).grid(row=3, column=0, columnspan=4, pady=padding)
+        if status == 1:
+            db_labels = [
+                ("Database:", 'Db'),
+                ("Db User:", 'User'),
+                ("Db Password:", 'Password'),
+                ("Font:", 'Font'),
+            ]
+            db_entries = {}
+            for i, (label, key) in enumerate(db_labels):
+                col = 0 if i < 2 else 1
+                row = 4 + (i % 2)
+                tb.Label(cfg, text=label, background='#F1EAD7', font=("arial", font_size)).grid(row=row, column=col*2, padx=10, pady=padding, sticky="e")
+                entry = tb.Entry(cfg, style="Custom.TButton", font=("arial", entry_font_size), justify="center")
+                entry.grid(row=row, column=col*2+1, padx=10, pady=padding, sticky="w")
+                if key == 'Password':
+                    entry.insert(0, f"dadds{self.Bend.datos[key]}")
+                else:
+                    entry.insert(0, self.Bend.datos[key])
+                db_entries[key] = entry
+            Db = db_entries['Db']
+            DbU = db_entries['User']
+            DbP = db_entries['Password']
+            font = db_entries['Font']
+            # Supabase config abajo, ocupando todo el ancho
+            supabase_row = 6
+            tb.Label(cfg, text="Configuración de Supabase", background='#F1EAD7', font=("arial", font_size, "bold")).grid(row=supabase_row, column=0, columnspan=4, pady=(padding, 0))
+            tb.Label(cfg, text="(Dejar vacío para deshabilitar)", background='#F1EAD7', font=("arial", int(12 * self.Bend.font)), foreground="grey").grid(row=supabase_row+1, column=0, columnspan=4)
+            tb.Label(cfg, text="Supabase URL:", background='#F1EAD7', font=("arial", font_size)).grid(row=supabase_row+2, column=0, columnspan=1, padx=10, pady=padding, sticky="e")
+            supabase_url = tb.Entry(cfg, style="Custom.TButton", font=("arial", entry_font_size), justify="center", width=50)
+            supabase_url.grid(row=supabase_row+2, column=1, columnspan=3, padx=10, pady=padding, sticky="w")
+            tb.Label(cfg, text="Supabase Key:", background='#F1EAD7', font=("arial", font_size)).grid(row=supabase_row+3, column=0, columnspan=1, padx=10, pady=padding, sticky="e")
+            supabase_key = tb.Entry(cfg, style="Custom.TButton", font=("arial", entry_font_size), justify="center", width=50)
+            supabase_key.grid(row=supabase_row+3, column=1, columnspan=3, padx=10, pady=padding, sticky="w")
             try:
                 supabase_config_path = os.path.join(os.path.dirname(__file__), "supabase_config.json")
                 if os.path.exists(supabase_config_path):
@@ -281,9 +269,8 @@ class caja():
                     supabase_key.insert(0, supabase_config.get("supabase_key", ""))
             except Exception as e:
                 print(f"Error loading Supabase config: {str(e)}")
-            
-        tb.Button(cfg, text="Guardar", style="Custom.TButton", command=save).pack(pady=10)
-        tb.Button(cfg, text="Menu", style="Custom.TButton", command=cfg.destroy).pack(pady=10)
+        tb.Button(cfg, text="Guardar", style="Custom.TButton", command=save).grid(row=20, column=0, columnspan=2, pady=padding)
+        tb.Button(cfg, text="Menu", style="Custom.TButton", command=cfg.destroy).grid(row=20, column=2, columnspan=2, pady=padding)
     def check(self, event=None):
         key=0
         username = self.User.get()

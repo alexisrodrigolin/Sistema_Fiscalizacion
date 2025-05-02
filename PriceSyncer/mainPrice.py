@@ -297,7 +297,7 @@ class main():
                 self.tree.insert("", 'end', values=(
                     net,
                     cant,
-                    f"$ {format(producto[3],",.2f")}",
+                    f"$ {format(producto[3],',.2f')}",
                     producto[1]
                 ))
 
@@ -395,7 +395,7 @@ class main():
                 # Intentar convertir a float
                 numeric_value = float(raw_value)
                 # Formatear con 2 decimales y símbolo $
-                formatted = f"$ {format(numeric_value,",.2f")}"
+                formatted = f"$ {format(numeric_value,',.2f')}"
                 entry.delete(0, tk.END)
                 entry.insert(0, formatted)
             except ValueError:
@@ -1088,14 +1088,14 @@ class main():
                 c.drawCentredString(
                     x + LABEL_WIDTH/2+0.2*cm,
                     y +ESPACIADO ,
-                    f"{format((producto["cunidad"]*producto["precio"]),",.2f")} xLt"
+                    f"{format((producto["cunidad"]*producto["precio"]),',.2f')} xLt"
                 )
                 # Precio (centro destacado)
                 c.setFont(NOMBRE_FUENTE + "-Bold", TAMANO_PRECIO)
                 c.drawCentredString(
                     x + LABEL_WIDTH/2,
                     y + LABEL_HEIGHT - ZONA_PRECIO,
-                    f"$ {format(producto["precio"],",.2f")}"
+                    f"$ {format(producto["precio"],',.2f')}"
                 )
 
                 # Precio sin impuestos nacionales
@@ -1110,7 +1110,7 @@ class main():
                 c.drawString(
                     x + LABEL_WIDTH/2 + 0.3*cm,  # Moved more to the right
                     y + LABEL_HEIGHT - ZONA_PRECIO - 0.8*cm,  # Moved down from 0.7 to 0.9
-                    f"NACIONALES: $ {format(precio_sin_impuestos,",.2f")}"
+                    f"NACIONALES: $ {format(precio_sin_impuestos,',.2f')}"
                 )
 
                 # Código de barras (parte inferior)
@@ -1301,22 +1301,22 @@ class main():
 
             # 3. Precio actual
             if producto["cant"]==1: 
-                precio_actual = Paragraph(f"Ahora: <b> ${format((producto['precio']*producto['cant']),",.2f")}</b>", estilos['precio'])
+                precio_actual = Paragraph(f"Ahora: <b> ${format((producto['precio']*producto['cant']),',.2f')}</b>", estilos['precio'])
             else:
-                precio_actual = Paragraph(f"Ahora: <b>{int(producto['cant'])}x ${format((producto['precio']*producto['cant']),",.2f")}</b>", estilos['precio'])
+                precio_actual = Paragraph(f"Ahora: <b>{int(producto['cant'])}x ${format((producto['precio']*producto['cant']),',.2f')}</b>", estilos['precio'])
             precio_actual.wrapOn(c, ancho_etiqueta - 1 * cm, alto_etiqueta)
             x_pos = x + (ancho_etiqueta - precio_actual.width) / 2
             precio_actual.drawOn(c, x_pos, y + alto_etiqueta - (4.5 * cm*state) - precio_actual.height)
 
             # 4. Precio sin impuestos nacionales
             precio_sin_impuestos = producto['precio'] * 0.79
-            precio_sin_impuestos_text = Paragraph(f"PRECIO SIN IMPUESTOS NACIONALES: $ {format(precio_sin_impuestos,",.2f")}", estilos['other'])
+            precio_sin_impuestos_text = Paragraph(f"PRECIO SIN IMPUESTOS NACIONALES: $ {format(precio_sin_impuestos,',.2f')}", estilos['other'])
             precio_sin_impuestos_text.wrapOn(c, ancho_etiqueta - 1 * cm, alto_etiqueta)
             x_pos = x + 0.5 * cm  # Alineado a la izquierda como precio por litro
             precio_sin_impuestos_text.drawOn(c, x_pos, y + 0.5 * cm)  # Posicionado justo debajo del precio por litro
 
             # 5. Precio anterior tachado
-            precio_anterior = Paragraph(f"<b>Antes:</b> $ {format(producto['precio_anterior'],",.2f")}", estilos['other'])
+            precio_anterior = Paragraph(f"<b>Antes:</b> $ {format(producto['precio_anterior'],',.2f')}", estilos['other'])
             precio_anterior.wrapOn(c, ancho_etiqueta - 1 * cm, alto_etiqueta)
             x_pos = x + 5*cm+(ancho_etiqueta - precio_anterior.width) / 2
             precio_anterior.drawOn(c, x_pos, y + alto_etiqueta - (6.5 * cm*state) - precio_anterior.height)
@@ -1324,9 +1324,9 @@ class main():
             # 6. Precio por litro
             uni= producto['unidad'] if not producto['unidad']== 'Unidad:' else 'unidad'
             if producto["cant"]==1:
-                precio_litro = Paragraph(f"Precio por {producto['unidad']}: $ {format((producto['CantUni']*producto["precio"]), ",.2f")}", estilos['other'])
+                precio_litro = Paragraph(f"Precio por {producto['unidad']}: $ {format((producto['CantUni']*producto["precio"]), ',.2f')}", estilos['other'])
             else:
-                precio_litro = Paragraph(f"Precio por Unidad: $ {format(producto["precio"], ",.2f")}", estilos['other'])
+                precio_litro = Paragraph(f"Precio por Unidad: $ {format(producto["precio"], ',.2f')}", estilos['other'])
             precio_litro.wrapOn(c, ancho_etiqueta - 1 * cm, alto_etiqueta)
             x_pos = x + 0.5 * cm  # Alineado a la izquierda
             precio_litro.drawOn(c, x_pos, y + 1 * cm)

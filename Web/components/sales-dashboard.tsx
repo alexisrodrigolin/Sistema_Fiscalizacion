@@ -163,7 +163,7 @@ export function SalesDashboard() {
         cancelledTransactions={cancelledTransactions}
         avgDailySales={avgDailySales}
         highestSalesDay={highestSalesDay}
-        dateRange={dateRange}
+        dateRange={dateRange && dateRange.from ? { from: dateRange.from, to: dateRange.to } : undefined}
         cashTotal={cashTotal}
         cardTotal={cardTotal}
         virtualTotal={virtualTotal}

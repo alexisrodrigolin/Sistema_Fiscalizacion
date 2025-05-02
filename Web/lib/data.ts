@@ -115,21 +115,21 @@ export async function getDailySales(startDate: string, endDate: string) {
 
   // Ensure all required fields are present, defaulting to 0 or empty string for missing fields
   const processedData = data.map(item => ({
-    id: item.id ?? 0,
-    date: item.date ?? '',
-    invoiced_total: item.invoiced_total ?? 0,
-    non_invoiced_total: item.non_invoiced_total ?? 0,
-    invoiced_transactions: item.invoiced_transactions ?? 0,
-    non_invoiced_transactions: item.non_invoiced_transactions ?? 0,
-    cancelled_total: item.cancelled_total ?? 0,
-    cancelled_transactions: item.cancelled_transactions ?? 0,
-    cash_total: item.cash_total ?? 0,
-    card_total: item.card_total ?? 0,
-    virtual_total: item.virtual_total ?? 0,
-    cash_transactions: item.cash_transactions ?? 0,
-    card_transactions: item.card_transactions ?? 0,
-    virtual_transactions: item.virtual_transactions ?? 0,
-    created_at: item.created_at ?? undefined,
+    id: Number(item.id) || 0,
+    date: String(item.date) || '',
+    invoiced_total: Number(item.invoiced_total) || 0,
+    non_invoiced_total: Number(item.non_invoiced_total) || 0,
+    invoiced_transactions: Number(item.invoiced_transactions) || 0,
+    non_invoiced_transactions: Number(item.non_invoiced_transactions) || 0,
+    cancelled_total: Number(item.cancelled_total) || 0,
+    cancelled_transactions: Number(item.cancelled_transactions) || 0,
+    cash_total: Number(item.cash_total) || 0,
+    card_total: Number(item.card_total) || 0,
+    virtual_total: Number(item.virtual_total) || 0,
+    cash_transactions: Number(item.cash_transactions) || 0,
+    card_transactions: Number(item.card_transactions) || 0,
+    virtual_transactions: Number(item.virtual_transactions) || 0,
+    created_at: item.created_at ? String(item.created_at) : undefined,
   }))
 
   console.log('Processed data from Supabase:', processedData)

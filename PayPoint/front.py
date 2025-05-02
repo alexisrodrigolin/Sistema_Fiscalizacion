@@ -61,6 +61,8 @@ class caja():
         self.app.bind("<Return>", self.check)
         self.columnas_rows(col=8, row=15)
         
+        self.app.protocol("WM_DELETE_WINDOW", self.on_close)
+        
         self.app.mainloop()
 
     def create_widget_menu(self):
@@ -468,7 +470,7 @@ class caja():
         self.Pitem.pack(pady=20)
         self.Pprice.pack(pady=20)
     def preciobind(self):
-        self.app.bind("<Escape>", lambda event: (self.Precio.destroy(), self.ppbind()))
+        self.app.bind("<Escape>", lambda event: (self.Precio.destroy(), self.ppbind(event)))
         self.app.bind("<Return>", lambda event: self.items(event,1))
         self.app.bind("<+>", lambda event: self.almacen(event=event, type="Almacén",status=1))
         self.app.bind("<F5>", lambda event: self.almacen(event=event, type="Fiambrería",status=1))
@@ -765,15 +767,15 @@ class caja():
                                   foreground='#847C67').place(relx=0.54, rely=0.35)
         self.R_efectivo_valor.bind("<Return>", lambda event : self.enter_as_tab(event))
         self.R_PagoElec_valor.bind("<Return>", lambda event : self.enter_as_tab(event))
-        self.R_tarjeta_valor.bind("<Return>", lambda event: (self.resume.focus_force(), self.resume.destroy(), 
+        self.R_tarjeta_valor.bind("<Return>", lambda event: (self.sim(3, event),self.resume.focus_force(), 
                                                              self.ppbind(),self.facturacion_click(status=1, event=event)))
         self.R_efectivo_valor.bind("<FocusOut>", lambda event: self.sim(1, event))
         self.R_PagoElec_valor.bind("<FocusOut>", lambda event: self.sim(2, event))
         self.R_tarjeta_valor.bind("<FocusOut>", lambda event: self.sim(3, event))
         self.R_recargo_valor.bind("<FocusOut>", lambda event: bon(event))
         self.R_bonificacion_valor.bind("<FocusOut>", lambda event: bon(event))
-        self.app.bind("<F4>", lambda event: (self.resume.destroy(), self.ppbind(),self.facturacion_click(status=1, event=event)))
-        self.app.bind("<F5>", lambda event: (self.resume.destroy(), self.ppbind(),self.facturacion_click(status=2, event=event)))
+        self.app.bind("<F4>", lambda event: (self.ppbind(),self.facturacion_click(status=1, event=event)))
+        self.app.bind("<F5>", lambda event: (self.ppbind(),self.facturacion_click(status=2, event=event)))
         self.app.bind("<Escape>", lambda event: (self.resume.destroy(), self.ppbind()))
     def call(self, command,extra=0, extra1=0, event=0):
         if command == 'tique':
@@ -915,7 +917,7 @@ class caja():
         pos_x = (ancho_pantalla - 600) // 2
         pos_y = (alto_pantalla - 400) // 2
         error_window.geometry(f"{600}x{400}+{pos_x}+{pos_y}")
-        label = tb.Label(error_window, text=f"⚠︎  {message}",font=("Arial", int(30*self.Bend.font)),  justify="center", foreground="#AB9F9F", background="#39384B")
+        label = tb.Label(error_window, text=f"⚠︎{message}",font=("Arial", int(30*self.Bend.font)),  justify="center", foreground="#AB9F9F", background="#39384B")
         label.pack(pady=30)
         if not state:tb.Label(error_window, text= 'Contáctese con el técnico',font=("Arial", int(15*self.Bend.font)),  justify="center", foreground="red", background="#39384B").pack(pady=30)
         if state==4:
@@ -1138,7 +1140,14 @@ class caja():
                         productos_para_imprimir.append((descripcion, precio, cantidad))
                 
                 # Imprimir ticket
-                self.Bend.imprimir_ticket(productos_para_imprimir, nombre_impresora=printer_name)
+                self.Bend.imprimir_ticket(productos_para_imprimir, printer_name)
             self.cancelar_anular(status=1)
+            self.resume.destroy()
+
+    def on_close(self):
+        if self.Bend.subtotal != 0:
+            self.mostrar_error("No puede cerrar la aplicación con un tique abierto.", 1)
+            return  # Cancela el cierre
+        self.app.destroy()  # Permite el cierre si subtotal es 0
 
 caja()

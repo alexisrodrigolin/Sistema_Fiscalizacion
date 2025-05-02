@@ -113,11 +113,23 @@ export async function getDailySales(startDate: string, endDate: string) {
     throw error
   }
 
-  // Ensure all required fields are present, defaulting to 0 for cancelled fields if missing
+  // Ensure all required fields are present, defaulting to 0 or empty string for missing fields
   const processedData = data.map(item => ({
-    ...item,
-    cancelled_total: item.cancelled_total || 0,
-    cancelled_transactions: item.cancelled_transactions || 0,
+    id: item.id ?? 0,
+    date: item.date ?? '',
+    invoiced_total: item.invoiced_total ?? 0,
+    non_invoiced_total: item.non_invoiced_total ?? 0,
+    invoiced_transactions: item.invoiced_transactions ?? 0,
+    non_invoiced_transactions: item.non_invoiced_transactions ?? 0,
+    cancelled_total: item.cancelled_total ?? 0,
+    cancelled_transactions: item.cancelled_transactions ?? 0,
+    cash_total: item.cash_total ?? 0,
+    card_total: item.card_total ?? 0,
+    virtual_total: item.virtual_total ?? 0,
+    cash_transactions: item.cash_transactions ?? 0,
+    card_transactions: item.card_transactions ?? 0,
+    virtual_transactions: item.virtual_transactions ?? 0,
+    created_at: item.created_at ?? undefined,
   }))
 
   console.log('Processed data from Supabase:', processedData)

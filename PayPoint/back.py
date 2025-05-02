@@ -1,7 +1,7 @@
 import mysql.connector as sql
-# import win32print
-# import win32con
-# import win32com.client as winc
+import win32print
+import win32con
+import win32com.client as winc
 import json
 import os
 import sys

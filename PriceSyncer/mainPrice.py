@@ -1072,7 +1072,7 @@ class main():
                 
                 # Nombre del producto (parte superior)
                 c.setFont(NOMBRE_FUENTE, TAMANO_TEXTO)
-                nombre = simpleSplit(producto["nombre"], NOMBRE_FUENTE, TAMANO_TEXTO, LABEL_WIDTH - 2*ESPACIADO)
+                nombre = simpleSplit(producto['nombre'], NOMBRE_FUENTE, TAMANO_TEXTO, LABEL_WIDTH - 2*ESPACIADO)
                 text_y = y + LABEL_HEIGHT - ZONA_NOMBRE
                 for line in nombre:
                     c.drawString(x + ESPACIADO, text_y, line)
@@ -1082,20 +1082,20 @@ class main():
                 c.drawCentredString(
                     x + LABEL_WIDTH-0.8*cm,
                     y +ESPACIADO ,
-                    producto["fecha"]
+                    producto['fecha']
                 )
                 c.setFont(NOMBRE_FUENTE, 8)
                 c.drawCentredString(
                     x + LABEL_WIDTH/2+0.2*cm,
                     y +ESPACIADO ,
-                    f"{format((producto["cunidad"]*producto["precio"]),',.2f')} xLt"
+                    f"{format((producto['cunidad']*producto['precio']),',.2f')} xLt"
                 )
                 # Precio (centro destacado)
                 c.setFont(NOMBRE_FUENTE + "-Bold", TAMANO_PRECIO)
                 c.drawCentredString(
                     x + LABEL_WIDTH/2,
                     y + LABEL_HEIGHT - ZONA_PRECIO,
-                    f"$ {format(producto["precio"],',.2f')}"
+                    f"$ {format(producto['precio'],',.2f')}"
                 )
 
                 # Precio sin impuestos nacionales
@@ -1324,9 +1324,9 @@ class main():
             # 6. Precio por litro
             uni= producto['unidad'] if not producto['unidad']== 'Unidad:' else 'unidad'
             if producto["cant"]==1:
-                precio_litro = Paragraph(f"Precio por {producto['unidad']}: $ {format((producto['CantUni']*producto["precio"]), ',.2f')}", estilos['other'])
+                precio_litro = Paragraph(f"Precio por {producto['unidad']}: $ {format((producto['CantUni']*producto['precio']), ',.2f')}", estilos['other'])
             else:
-                precio_litro = Paragraph(f"Precio por Unidad: $ {format(producto["precio"], ',.2f')}", estilos['other'])
+                precio_litro = Paragraph(f"Precio por Unidad: $ {format(producto['precio'], ',.2f')}", estilos['other'])
             precio_litro.wrapOn(c, ancho_etiqueta - 1 * cm, alto_etiqueta)
             x_pos = x + 0.5 * cm  # Alineado a la izquierda
             precio_litro.drawOn(c, x_pos, y + 1 * cm)

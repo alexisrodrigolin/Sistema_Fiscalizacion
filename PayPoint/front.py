@@ -179,26 +179,21 @@ class caja():
                     self.Bend.datos['Password'] = DbP.get()[5:]
                     self.Bend.datos['Font'] = font.get()
                     if supabase_url.get().strip() and supabase_key.get().strip():
-                        supabase_config = {
-                            "supabase_url": supabase_url.get().strip(),
-                            "supabase_key": supabase_key.get().strip()
-                        }
-                        supabase_config_path = os.path.join(os.path.dirname(__file__), "supabase_config.json")
-                        with open(supabase_config_path, "w") as f:
-                            json.dump(supabase_config, f, indent=4)
+                        self.Bend.datos['Supabase_url'] = supabase_url.get().strip()
+                        self.Bend.datos['Supabase_key'] = supabase_key.get().strip()
                         try:
                             self.Bend.supabase = create_client(
-                                supabase_config["supabase_url"],
-                                supabase_config["supabase_key"]
+                                self.Bend.datos['Supabase_url'],
+                                self.Bend.datos['Supabase_key']
                             )
                             messagebox.showinfo("Éxito", "Configuración de Supabase guardada y conectada correctamente")
                         except Exception as e:
                             messagebox.showerror("Error", f"Error al conectar con Supabase: {str(e)}")
                             return
                     else:
+                        self.Bend.datos['Supabase_url'] = ""
+                        self.Bend.datos['Supabase_key'] = ""
                         self.Bend.supabase = None
-                        if os.path.exists(os.path.join(os.path.dirname(__file__), "supabase_config.json")):
-                            os.remove(os.path.join(os.path.dirname(__file__), "supabase_config.json"))
                 self.Bend.writeCfg()
                 cfg.destroy()
         font_size = int(20 * self.Bend.font)
@@ -263,12 +258,9 @@ class caja():
             supabase_key = tb.Entry(cfg, style="Custom.TButton", font=("arial", entry_font_size), justify="center", width=50)
             supabase_key.grid(row=supabase_row+3, column=1, columnspan=3, padx=10, pady=padding, sticky="w")
             try:
-                supabase_config_path = os.path.join(os.path.dirname(__file__), "supabase_config.json")
-                if os.path.exists(supabase_config_path):
-                    with open(supabase_config_path, "r") as f:
-                        supabase_config = json.load(f)
-                    supabase_url.insert(0, supabase_config.get("supabase_url", ""))
-                    supabase_key.insert(0, supabase_config.get("supabase_key", ""))
+                if 'Supabase_url' in self.Bend.datos and 'Supabase_key' in self.Bend.datos:
+                    supabase_url.insert(0, self.Bend.datos['Supabase_url'])
+                    supabase_key.insert(0, self.Bend.datos['Supabase_key'])
             except Exception as e:
                 print(f"Error loading Supabase config: {str(e)}")
         tb.Button(cfg, text="Guardar", style="Custom.TButton", command=save).grid(row=20, column=0, columnspan=2, pady=padding)
@@ -409,6 +401,7 @@ class caja():
                 else:
                     self.Pitem.config(text= f"{net} x{mult+extra}")    
                 self.Pprice.config(text= f"$ {format((value+values),',.2f')}")
+                self.preciobind()
             elif status==2:
                 if cantOf:
                     self.detalles.insert('', 'end', values=(f"- {cantOf}", f"{net}",f"- $ {format(price, ',.2f')}", f"- $ {format(value, ',.2f')}"))
@@ -776,6 +769,7 @@ class caja():
         self.R_bonificacion_valor.bind("<FocusOut>", lambda event: bon(event))
         self.app.bind("<F4>", lambda event: (self.ppbind(),self.facturacion_click(status=1, event=event)))
         self.app.bind("<F5>", lambda event: (self.ppbind(),self.facturacion_click(status=2, event=event)))
+        self.app.bind("<F6>", lambda event: (self.ppbind(),self.facturacion_click(status=3, event=event)))
         self.app.bind("<Escape>", lambda event: (self.resume.destroy(), self.ppbind()))
     def call(self, command,extra=0, extra1=0, event=0):
         if command == 'tique':
@@ -1141,6 +1135,9 @@ class caja():
                 
                 # Imprimir ticket
                 self.Bend.imprimir_ticket(productos_para_imprimir, printer_name)
+            self.cancelar_anular(status=1)
+            self.resume.destroy()
+        elif status == 3:
             self.cancelar_anular(status=1)
             self.resume.destroy()
 

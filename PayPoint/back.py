@@ -207,7 +207,7 @@ class Logic:
         self.nitem=0
         
     
-    def imprimir_ticket(productos, nombre_impresora=None):
+    def imprimir_ticket(self,productos, nombre_impresora=None):
         # Configuración precisa
         ANCHO_TICKET = 48
         PRICE_WIDTH = 12  # Ancho fijo para precios
@@ -322,75 +322,77 @@ class Logic:
         self.mydb.commit()
 
     def update_caja1(self, facturated=0, non_facturated=0, card=0, cash=0, virtual=0, tcard=0, tcash=0, tvirtual=0, tcancelled=0, cancelled=0):
-        """Update the Caja1 table with the current transaction details"""
         try:
-            # First check if table exists, if not create it
-            self.cursor.execute("""
-                CREATE TABLE IF NOT EXISTS Caja1 (
-                    Date datetime NOT NULL,
-                    Facturated int DEFAULT NULL,
-                    Non_Facturated int DEFAULT NULL,
-                    Card int DEFAULT NULL,
-                    Cash int DEFAULT NULL,
-                    Virtualp int DEFAULT NULL,
-                    Tcard int DEFAULT NULL,
-                    Tcash int DEFAULT NULL,
-                    Tvirtual int DEFAULT NULL,
-                    TCancelled int DEFAULT NULL,
-                    Cancelled int DEFAULT NULL,
-                    PRIMARY KEY (Date),
-                    UNIQUE KEY Date_UNIQUE (Date)
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
-            """)
+            print(f"Intentando actualizar Caja1 con valores: facturated={facturated}, non_facturated={non_facturated}, card={card}, cash={cash}, virtual={virtual}, tcard={tcard}, tcash={tcash}, tvirtual={tvirtual}, tcancelled={tcancelled}, cancelled={cancelled}")
             
-            # Get current date
-            current_date = datetime.now()
-            current_date_str = current_date.strftime('%Y-%m-%d %H:%M:%S')
+            # Verificar si la tabla existe
+            self.cursor.execute("SHOW TABLES LIKE 'Caja1'")
+            if not self.cursor.fetchone():
+                print("La tabla Caja1 no existe, creándola...")
+                self.cursor.execute("""
+                    CREATE TABLE Caja1 (
+                        Date DATETIME PRIMARY KEY,
+                        Facturated DECIMAL(10,2),
+                        Non_Facturated DECIMAL(10,2),
+                        Card DECIMAL(10,2),
+                        Cash DECIMAL(10,2),
+                        virtualp DECIMAL(10,2),
+                        Tcard INT,
+                        Tcash INT,
+                        Tvirtual INT,
+                        TCancelled INT,
+                        Cancelled DECIMAL(10,2)
+                    )
+                """)
+                print("Tabla Caja1 creada exitosamente")
             
-            # Delete records older than 7 days
-            seven_days_ago = (current_date - timedelta(days=7)).strftime('%Y-%m-%d %H:%M:%S')
-            self.cursor.execute("DELETE FROM Caja1 WHERE Date < %s", (seven_days_ago,))
+            # Eliminar registros antiguos
+            self.cursor.execute("DELETE FROM Caja1 WHERE Date < DATE_SUB(NOW(), INTERVAL 7 DAY)")
+            print("Registros antiguos eliminados")
             
-            # Check if record exists for today
-            self.cursor.execute("SELECT * FROM Caja1 WHERE Date = %s", (current_date_str,))
-            result = self.cursor.fetchone()
+            # Verificar si ya existe un registro para la fecha actual
+            self.cursor.execute("SELECT * FROM Caja1 WHERE DATE(Date) = CURDATE()")
+            existing_record = self.cursor.fetchone()
             
-            if result:
-                # Update existing record
+            if existing_record:
+                print("Actualizando registro existente")
+                # Actualizar el registro existente
                 self.cursor.execute("""
                     UPDATE Caja1 
                     SET Facturated = Facturated + %s,
                         Non_Facturated = Non_Facturated + %s,
                         Card = Card + %s,
                         Cash = Cash + %s,
-                        Virtualp = Virtualp + %s,
+                        virtualp = virtualp + %s,
                         Tcard = Tcard + %s,
                         Tcash = Tcash + %s,
                         Tvirtual = Tvirtual + %s,
                         TCancelled = TCancelled + %s,
                         Cancelled = Cancelled + %s
-                    WHERE Date = %s
-                """, (facturated, non_facturated, card, cash, virtual, tcard, tcash, tvirtual, tcancelled, cancelled, current_date_str))
+                    WHERE DATE(Date) = CURDATE()
+                """, (facturated, non_facturated, card, cash, virtual, tcard, tcash, tvirtual, tcancelled, cancelled))
             else:
-                # Insert new record
+                print("Insertando nuevo registro")
+                # Insertar nuevo registro
                 self.cursor.execute("""
-                    INSERT INTO Caja1 (Date, Facturated, Non_Facturated, Card, Cash, Virtualp, Tcard, Tcash, Tvirtual, TCancelled, Cancelled)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-                """, (current_date_str, facturated, non_facturated, card, cash, virtual, tcard, tcash, tvirtual, tcancelled, cancelled))
+                    INSERT INTO Caja1 (Date, Facturated, Non_Facturated, Card, Cash, virtualp, Tcard, Tcash, Tvirtual, TCancelled, Cancelled)
+                    VALUES (NOW(), %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                """, (facturated, non_facturated, card, cash, virtual, tcard, tcash, tvirtual, tcancelled, cancelled))
             
+            print("Commit de la transacción")
             self.mydb.commit()
             
-            # Try to sync with Supabase in the background only if configured
-            if self.supabase:
-                try:
-                    threading.Thread(target=self.sync_with_supabase, daemon=True).start()
-                except Exception as e:
-                    print(f"Background sync failed: {str(e)}")
-            
-            return True
+            # Intentar sincronizar con Supabase si está configurado
+            try:
+                if self.supabase:
+                    print("Intentando sincronizar con Supabase")
+                    self.sync_with_supabase()
+            except Exception as e:
+                print(f"Error al sincronizar con Supabase: {str(e)}")
+                
         except Exception as e:
-            print(f"Error updating Caja1: {str(e)}")
-            return False
+            print(f"Error en update_caja1: {str(e)}")
+            raise
 
     def cmd_error (self,cmdname,drv):
         "Manejo error en comando"

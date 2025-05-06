@@ -208,9 +208,9 @@ class Logic:
         
     
     def imprimir_ticket(self,productos, nombre_impresora=None):
-        # Configuración precisa
-        ANCHO_TICKET = 48
-        PRICE_WIDTH = 12  # Ancho fijo para precios
+        # Configuración precis
+        ANCHO_TICKET = 47
+        PRICE_WIDTH = 11   # Ancho fijo para precios
         DESC_WIDTH = ANCHO_TICKET - PRICE_WIDTH - 1  # 35 caracteres
         TRUNCATE_LENGTH = DESC_WIDTH - 3  # 32 caracteres antes de "..."
     # Obtener la fecha y hora actual
@@ -269,7 +269,7 @@ class Logic:
         try:
             win32print.StartDocPrinter(hprinter, 1, ("Ticket", None, "RAW"))
             win32print.StartPagePrinter(hprinter)
-            contenido = "".join(ticket).encode('utf-8', 'ignore')
+            contenido = "".join(ticket).encode('cp850', 'replace')
             win32print.WritePrinter(hprinter, contenido)
         finally:
             win32print.EndPagePrinter(hprinter)
@@ -387,6 +387,8 @@ class Logic:
                 if self.supabase:
                     print("Intentando sincronizar con Supabase")
                     self.sync_with_supabase()
+                else:
+                    print("Supabase no está configurado")
             except Exception as e:
                 print(f"Error al sincronizar con Supabase: {str(e)}")
                 
@@ -671,11 +673,7 @@ class Logic:
                     exit()
                 print(" Numero: %s" % drv.IFOpRetGet("Numero"))
                 print(" CodigoTipo: %s" % drv.IFOpRetGet("CodigoTipo"))
-                print("AbrirCajon")
-                drv.IFOpBegin("AbrirCajon")
-                if not drv.IFOpSend(1):
-                    self.cmd_error("AbrirCajon",drv)
-                
+             
 
             elif command == "tnc": # Tique Nota de Credito
 
@@ -758,9 +756,15 @@ class Logic:
                 drv.IFOpParamSet("FechaFinal", f"{extra1}")
                 if not drv.IFOpSend(1):
                     self.cmd_error("ImprimirAuditoriaDetalladaPorFecha",drv)
+            elif command == "AbrirC": # Informe de Auditoría resumido
+                drv.IFOpBegin("AbrirCajon")
+                if not drv.IFOpSend(1):
+                    self.cmd_error("AbrirCajon",drv)
+
         except:
             return  drv.IFOpErrorDescGet()
         finally:
             drv.SerialPortClose()
+    
 
 Logic()

@@ -16,6 +16,10 @@ class caja():
 
     def __init__(self, *args, **kwargs):
         self.app = tb.Window(title="PayPoint", size=[1024, 768])
+        try:
+            self.app.iconbitmap('pay.ico')
+        except Exception as e:
+            print(f'No se pudo cargar el icono: {e}')
         self.app.config(background='#F1EAD7')
         self.app.state('zoomed')
         self.Bend = back.Logic() 
@@ -156,7 +160,6 @@ class caja():
             self.button6 = tb.Button(self.app, bootstyle="dark", text="Suspender",command=lambda:self.suspender())
             self.button6.place(relx=0.9, rely=0.64, relheight=0.07, relwidth=0.1)
             
-
             self.ppbind()
         except:
             self.mostrar_error("Error Fatal")
@@ -402,6 +405,7 @@ class caja():
                     self.Pitem.config(text= f"{net} x{mult+extra}")    
                 self.Pprice.config(text= f"$ {format((value+values),',.2f')}")
                 self.preciobind()
+                print("precioBind")
             elif status==2:
                 if cantOf:
                     self.detalles.insert('', 'end', values=(f"- {cantOf}", f"{net}",f"- $ {format(price, ',.2f')}", f"- $ {format(value, ',.2f')}"))
@@ -463,7 +467,11 @@ class caja():
         self.Pitem.pack(pady=20)
         self.Pprice.pack(pady=20)
     def preciobind(self):
-        self.app.bind("<Escape>", lambda event: (self.Precio.destroy(), self.ppbind(event)))
+        def destroy_precio(event=None):
+            if hasattr(self, 'Precio') and self.Precio:
+                self.Precio.destroy()
+            self.ppbind(event)
+        self.app.bind("<Escape>", destroy_precio)
         self.app.bind("<Return>", lambda event: self.items(event,1))
         self.app.bind("<+>", lambda event: self.almacen(event=event, type="Almacén",status=1))
         self.app.bind("<F5>", lambda event: self.almacen(event=event, type="Fiambrería",status=1))
@@ -579,6 +587,14 @@ class caja():
     def Resume(self, event=0):
         if not self.Bend.subtotal:
             return
+
+        # Si existe self.Precio, eliminarlo
+        if hasattr(self, 'Precio') and self.Precio:
+            try:
+                self.Precio.destroy()
+            except Exception:
+                pass
+            self.Precio = None
 
         self.entrada.delete(0, tb.END)
         self.ppunbind()
@@ -1114,6 +1130,8 @@ class caja():
             tcancelled=0,
             cancelled=0
         )
+        if tcash == 1:
+            self.Bend.main("AbrirC")
         self.resume.destroy()
         self.ppbind()
         if status == 1:

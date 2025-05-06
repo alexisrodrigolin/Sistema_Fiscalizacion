@@ -72,7 +72,7 @@ class connection():
         elif resultPlu2:
             return resultPlu2
         elif status==0:
-            instruction= f"INSERT INTO Art (PLU, Precio,Fecha_de_modificacion) VALUES('{codigo}','1','{date.today()}')"
+            instruction= f"INSERT INTO Art (PLU, Precio,Fecha_de_modificacion) VALUES('{codigo}','','{date.today()}')"
             self.cursor.execute(instruction)
             self.mydb.commit()
     

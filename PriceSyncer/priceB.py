@@ -102,8 +102,12 @@ class connection():
         return self.valid_users.get(username) == password
 
     def writeCfg(self):
-        with open("PriceConfiguration.json","w") as archivo:
-            json.dump(self.datos,archivo, indent=4)
+        # Get the base path for configuration files
+        local_dir = os.path.join(os.getenv("LOCALAPPDATA"), "RSystems")
+        config_path = os.path.join(local_dir, "Configuration.json")
+        
+        with open(config_path, "w") as archivo:
+            json.dump(self.datos, archivo, indent=4)
     def buscar_productos(self,general_terms, cantidad):
         try:
            

@@ -11,7 +11,7 @@ import sys
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4, landscape
 from reportlab.lib.units import cm
-from reportlab.graphics.barcode import code128, eanbc, createBarcodeDrawing, code39, usps,usps4s,ecc200datamatrix
+from reportlab.graphics.barcode import code128, eanbc, createBarcodeDrawing, code39, usps,usps4s,ecc200datamatrix,code93
 from reportlab.lib.colors import black, red
 from reportlab.platypus import Paragraph
 from reportlab.lib.styles import ParagraphStyle
@@ -1018,7 +1018,7 @@ class main():
 
         # Estilo del texto
         NOMBRE_FUENTE = "Helvetica"
-        TAMANO_PRECIO = 18  # Reducido para mejor ajuste
+        TAMANO_PRECIO = 20  # Reducido para mejor ajuste
         TAMANO_TEXTO = 10   # Reducido para mejor ajuste
         TAMANO_CODIGO = 6
         ESPACIADO = 0.15 * cm  # Aumentado para mejor separación
@@ -1080,84 +1080,81 @@ class main():
 
         def crear_etiquetas():
             c = canvas.Canvas("etiquetas_precios.pdf", pagesize=A4)
-            
+
             for i, producto in enumerate(productos):
+                # Saltar a una nueva página cuando se llenan las filas por hoja
                 if i % (ROWS_PER_PAGE * 3) == 0 and i != 0:
                     c.showPage()
-                
+
                 columna = i % 3
                 fila = (i // 3) % ROWS_PER_PAGE
-                
-                x = MARGIN_LEFT + (columna * LABEL_WIDTH)
-                y = PAGE_HEIGHT - LABEL_HEIGHT - (fila * LABEL_HEIGHT)-1*cm
-                
-                # Dibujar borde
+
+                # Coordenadas base de cada etiqueta
+                x = MARGIN_LEFT + columna * LABEL_WIDTH
+                y = PAGE_HEIGHT - LABEL_HEIGHT - fila * LABEL_HEIGHT - 1 * cm
+
+                # Dibuja el borde de la etiqueta
                 c.rect(x, y, LABEL_WIDTH, LABEL_HEIGHT)
-                
-                # Nombre del producto (parte superior)
+
+                # Nombre del producto
                 c.setFont(NOMBRE_FUENTE, TAMANO_TEXTO)
-                nombre = simpleSplit(producto['nombre'], NOMBRE_FUENTE, TAMANO_TEXTO, LABEL_WIDTH - 2*ESPACIADO)
+                nombre = simpleSplit(producto['nombre'], NOMBRE_FUENTE, TAMANO_TEXTO, LABEL_WIDTH - 2 * ESPACIADO)
                 text_y = y + LABEL_HEIGHT - ZONA_NOMBRE
                 for line in nombre:
                     c.drawString(x + ESPACIADO, text_y, line)
                     text_y -= TAMANO_TEXTO * 1.2
 
                 # Fecha
-                c.setFont(NOMBRE_FUENTE, 7)
+                c.setFont(NOMBRE_FUENTE, 5)
                 c.drawCentredString(
-                    x + LABEL_WIDTH-0.8*cm,
+                    x + LABEL_WIDTH - 0.8 * cm,
                     y + ESPACIADO,
-                    producto['fecha']
+                    f"{producto['fecha']}"
                 )
 
                 # Precio por litro
-                c.setFont(NOMBRE_FUENTE, 7)
-                c.drawCentredString(
-                    x + LABEL_WIDTH/2+0.2*cm,
-                    y + ESPACIADO,
-                    f"{format((producto['cunidad']*producto['precio']),',.2f')} xLt"
+                precio_xlt = producto['cunidad'] * producto['precio']
+                c.drawString(
+                    x + ESPACIADO,
+                    y  +LABEL_HEIGHT- ZONA_PRECIO - 0.65 * cm,
+                    f"$ {format(precio_xlt, ',.2f')} xLt"
                 )
 
                 # Precio principal
                 c.setFont(NOMBRE_FUENTE + "-Bold", TAMANO_PRECIO)
                 c.drawCentredString(
-                    x + LABEL_WIDTH/2,
+                    x + LABEL_WIDTH / 2,
                     y + LABEL_HEIGHT - ZONA_PRECIO,
-                    f"$ {format(producto['precio'],',.2f')}"
+                    f"$ {format(producto['precio'], ',.2f')}"
                 )
 
                 # Precio sin impuestos
-                precio_sin_impuestos = producto["precio"] * 0.79
+                precio_sin_iva = producto["precio"] * 0.79
                 c.setFont(NOMBRE_FUENTE, 5)
                 c.drawString(
-                    x + LABEL_WIDTH/2 + 0.3*cm,
-                    y + LABEL_HEIGHT - ZONA_PRECIO - 0.7*cm,
-                    "PRECIO SIN IMPUESTOS"
-                )
-                c.drawString(
-                    x + LABEL_WIDTH/2 + 0.3*cm,
-                    y + LABEL_HEIGHT - ZONA_PRECIO - 0.9*cm,
-                    f"NACIONALES: $ {format(precio_sin_impuestos,',.2f')}"
+                    x + ESPACIADO,
+                    y + LABEL_HEIGHT - ZONA_PRECIO - 0.85 * cm,
+                    f"PRECIO SIN IMPUESTOS NACIONALES: $ {format(precio_sin_iva, ',.2f')}"
                 )
 
-                # Código de barras
-                codigo_img = generar_codigo_barras(producto["codigo"])
-                c.drawImage(codigo_img, 
-                        x + ESPACIADO + 0.1*cm,
-                        y + ESPACIADO + 0.3*cm,
-                        width=2.8*cm,
-                        height=0.4*cm
-                )
-                
+                # Código de barras (comentado por ahora)
+                # codigo_img = generar_codigo_barras(producto["codigo"])
+                # c.drawImage(codigo_img, 
+                #     x + ESPACIADO + 0.1 * cm,
+                #     y + ESPACIADO + 0.3 * cm,
+                #     width=2.8 * cm,
+                #     height=0.4 * cm
+                # )
+
                 # Texto del código
                 c.setFont(NOMBRE_FUENTE, TAMANO_CODIGO)
-                c.drawCentredString(
-                    x + ESPACIADO + 0.95*cm,
-                    y + ESPACIADO + 0.1*cm,
-                    producto["codigo"]
+                c.drawString(
+                    x + ESPACIADO,
+                    y + ESPACIADO,
+                    f"PLU: {producto['codigo']}"
                 )
                 
-                os.remove(codigo_img)
+                # os.remove(codigo_img)
             
             c.save()
         crear_etiquetas()
@@ -1339,14 +1336,14 @@ class main():
             codigo.drawOn(c, x_pos, y + 1.2 * cm)
 
             # Código de barras
-            codigo_img = generar_codigo_barras(producto['codigo_barras'])
-            c.drawImage(codigo_img, 
-                    x_pos,
-                    y + 1.7 * cm,
-                    width=2.8 * cm,
-                    height=0.4 * cm
-            )
-            os.remove(codigo_img)
+            # codigo_img = generar_codigo_barras(producto['codigo_barras'])
+            # c.drawImage(codigo_img, 
+            #         x_pos,
+            #         y + 1.7 * cm,
+            #         width=2.8 * cm,
+            #         height=0.4 * cm
+            # )
+            # os.remove(codigo_img)
 
         c.save()
         self.abrir_pdf("ofertas.pdf")

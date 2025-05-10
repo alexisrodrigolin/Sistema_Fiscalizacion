@@ -372,7 +372,7 @@ class main():
             self.buscar(Re=value) 
                   
     def clean(self, event=0):
-
+        self.P_fecha.config(text="Fecha de Modificacion: ")
         self.P_id_value.config(state= 'normal')
         for widget in self.app.winfo_children():
             if isinstance(widget, tb.Entry):
@@ -443,9 +443,9 @@ class main():
             text="Precio", style= "darkly",command=self.create_widget_precio)
             self.etiquetas= tb.Button(self.app,
             text = "etiquetas", style= "darkly", command=self.etiFrame)
-        
             self.etiquetas.grid(column=7, row=11, )
             self.precio.grid(column=7,row=10, )
+            
     def menu(self,event=0):
             self.delete_widgets()       
             self.app.unbind("<Return>")

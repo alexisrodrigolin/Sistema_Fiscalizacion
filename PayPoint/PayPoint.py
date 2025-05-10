@@ -11,6 +11,7 @@ import copy
 import os
 import json
 from supabase import create_client
+import threading
 
 class caja():
 
@@ -80,8 +81,7 @@ class caja():
         self.Password.grid(column=3, row=6, sticky="n")
         self.User.grid(column=3, row=5)
         self.numberCaja.grid(column=3, row=3)
-        self.User.focus()
-
+        self.User.focus_set()
     def create_widget_paypoint(self):
         self.OFstatus=1
         self.guardado=0
@@ -419,6 +419,13 @@ class caja():
             elif resto and status==1:
                 self.items(Re=f"{resto}*{codigo}",status=status, values=+value,extra=cantOf)
     def password(self, event=0, status=0):
+        if hasattr(self, 'Precio') and self.Precio:
+            try:
+                self.Precio.destroy()
+            except Exception:
+                pass
+            self.Precio = None
+
         def read(event=0):
             if cont.get()== self.Bend.datos["SuperPass"]:
                 self.passw.destroy()
@@ -456,6 +463,13 @@ class caja():
         cont.focus_set()
         self.app.bind("<Escape>", lambda event: (self.ppbind(event), self.passw.destroy()))
     def precio(self,event=0):
+        if hasattr(self, 'Precio') and self.Precio:
+            try:
+                self.Precio.destroy()
+            except Exception:
+                pass
+            self.Precio = None
+
         color= 'grey'
         self.Precio=tk.Frame(self.app)
         self.Precio.config(background=color)
@@ -812,18 +826,18 @@ class caja():
     def cancelar_anular(self, status, event=0, achieve=0):
         if achieve:
             # Update Caja1 table with cancellation
-            self.Bend.update_caja1(
-                facturated=0,
-                non_facturated=0,
-                card=0,
-                cash=0,
-                virtual=0,
-                tcard=0,
-                tcash=0,
-                tvirtual=0,
-                tcancelled=1,  # Add 1 to cancelled transactions count
-                cancelled=self.Bend.subtotal  # Add subtotal to cancelled amount
-            )
+            threading.Thread(target=self.Bend.update_caja1, kwargs={
+                'facturated': 0,
+                'non_facturated': 0,
+                'card': 0,
+                'cash': 0,
+                'virtual': 0,
+                'tcard': 0,
+                'tcash': 0,
+                'tvirtual': 0,
+                'tcancelled': 1,  # Add 1 to cancelled transactions count
+                'cancelled': self.Bend.subtotal  # Add subtotal to cancelled amount
+            }, daemon=True).start()
             
         if status == 1:
             self.Bend.suma(refresh=1)
@@ -1118,20 +1132,18 @@ class caja():
             return
         
         # Update Caja1 table
-        self.Bend.update_caja1(
-            facturated=self.Bend.subtotal if status == 1 else 0 ,
-            non_facturated=self.Bend.subtotal if status == 2 else 0,
-            card=card,
-            cash=cash,
-            virtual=virtual,
-            tcard=tcard,
-            tcash=tcash,
-            tvirtual=tvirtual,
-            tcancelled=0,
-            cancelled=0
-        )
-        if tcash == 1:
-            self.Bend.main("AbrirC")
+        threading.Thread(target=self.Bend.update_caja1, kwargs={
+            'facturated': self.Bend.subtotal if status == 1 else 0,
+            'non_facturated': self.Bend.subtotal if status == 2 else 0,
+            'card': card,
+            'cash': cash,
+            'virtual': virtual,
+            'tcard': tcard,
+            'tcash': tcash,
+            'tvirtual': tvirtual,
+            'tcancelled': 0,
+            'cancelled': 0
+        }, daemon=True).start()
         self.resume.destroy()
         self.ppbind()
         if status == 1:

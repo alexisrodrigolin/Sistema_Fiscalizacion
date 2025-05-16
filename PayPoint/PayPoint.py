@@ -12,13 +12,26 @@ import os
 import json
 from supabase import create_client
 import threading
+import sys
+import serial
+
+def resource_path(relative_path):
+    """ Get absolute path to resource, works for dev and for PyInstaller """
+    try:
+        # PyInstaller creates a temp folder and stores path in _MEIPASS
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+
+    return os.path.join(base_path, relative_path)
 
 class caja():
 
     def __init__(self, *args, **kwargs):
         self.app = tb.Window(title="PayPoint", size=[1024, 768])
         try:
-            self.app.iconbitmap('pay.ico')
+            icon_path = resource_path('pay.ico')
+            self.app.iconbitmap(icon_path)
         except Exception as e:
             print(f'No se pudo cargar el icono: {e}')
         self.app.config(background='#F1EAD7')
@@ -67,6 +80,12 @@ class caja():
         self.columnas_rows(col=8, row=15)
         
         self.app.protocol("WM_DELETE_WINDOW", self.on_close)
+        
+        # Iniciar hilo para escáner serial solo si hay Escaner configurado
+        escaner_config = str(self.Bend.datos.get('Escaner', '')).strip()
+        if escaner_config and escaner_config.isdigit():
+            self.scanner_thread = threading.Thread(target=self.leer_escanner, daemon=True)
+            self.scanner_thread.start()
         
         self.app.mainloop()
 
@@ -176,6 +195,7 @@ class caja():
                 self.Bend.datos['EntryPass'] = passwordE.get()
                 self.Bend.datos['SuperPass'] = passwordS.get()
                 self.Bend.datos['Printer'] = printer.get()
+                self.Bend.datos['Escaner'] = escaner_entry.get()
                 if status == 1:
                     self.Bend.datos['Db'] = Db.get()
                     self.Bend.datos['User'] = DbU.get()
@@ -226,6 +246,11 @@ class caja():
         passwordE = entries['EntryPass']
         passwordA = entries['AdminPass']
         printer = entries['Printer']
+        # Campo para configurar el escáner (puerto COM)
+        tb.Label(cfg, text="Puerto Escáner (COM):", background='#F1EAD7', font=("arial", font_size)).grid(row=6, column=0, padx=10, pady=padding, sticky="e")
+        escaner_entry = tb.Entry(cfg, style="Custom.TButton", font=("arial", entry_font_size), justify="center")
+        escaner_entry.grid(row=6, column=1, padx=10, pady=padding, sticky="w")
+        escaner_entry.insert(0, self.Bend.datos.get('Escaner', ''))
         tb.Label(cfg, text="#Mantener Precaución al manipular las configuraciones", background='#F1EAD7', foreground="grey", font=("arial", int(12 * self.Bend.font))).grid(row=3, column=0, columnspan=4, pady=padding)
         if status == 1:
             db_labels = [
@@ -1130,7 +1155,11 @@ class caja():
         elif total_payment != self.Bend.subtotal:
             self.mostrar_error("La suma de los pagos debe ser igual al total", 2)
             return
-        
+        if total_payment < self.Bend.subtotal:
+            self.mostrar_error("El pago es menor al total", 2)
+            return
+        if tcash == 1:
+            self.Bend.main(command='AbrirC')
         # Update Caja1 table
         threading.Thread(target=self.Bend.update_caja1, kwargs={
             'facturated': self.Bend.subtotal if status == 1 else 0,
@@ -1176,5 +1205,28 @@ class caja():
             self.mostrar_error("No puede cerrar la aplicación con un tique abierto.", 1)
             return  # Cancela el cierre
         self.app.destroy()  # Permite el cierre si subtotal es 0
+
+    def leer_escanner(self):
+        try:
+            escaner_config = str(self.Bend.datos.get('Escaner', '')).strip()
+            if not escaner_config or not escaner_config.isdigit():
+                return  # No iniciar si no hay COM válido
+            puerto = f'COM{escaner_config}'
+            baudrate = self.Bend.baudrate
+            ser = serial.Serial(puerto, baudrate, timeout=1)
+            while True:
+                codigo = ser.readline().decode('utf-8').strip()
+                if codigo:
+                    print(f"[DEBUG] Código leído del escáner: {codigo}")
+                    self.app.after(0, self.procesar_codigo, codigo)
+        except Exception as e:
+            print(f"Error en el escáner: {e}")
+
+    def procesar_codigo(self, codigo):
+        print(f"[DEBUG] procesar_codigo llamado con: {codigo}")
+        if hasattr(self, 'entrada'):
+            self.entrada.delete(0, tk.END)
+            self.entrada.insert(0, codigo)
+            self.items()
 
 caja()

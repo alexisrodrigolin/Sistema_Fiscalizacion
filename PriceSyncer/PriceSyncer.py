@@ -19,7 +19,13 @@ from reportlab.lib.enums import TA_CENTER, TA_RIGHT
 from reportlab.graphics.shapes import Drawing
 from reportlab.graphics import renderPM
 
-
+def resource_path(relative_path):
+    """ Get absolute path to resource, works for dev and for PyInstaller """
+    try:
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+    return os.path.join(base_path, relative_path)
 
 class main():
     def __init__(self):
@@ -27,7 +33,8 @@ class main():
 
         self.app= tb.Window(themename= "darkly",title= "PriceSyncer",size= [1024, 768])
         try:
-            self.app.iconbitmap('price.ico')
+            icon_path = resource_path('price.ico')
+            self.app.iconbitmap(icon_path)
         except Exception as e:
             print(f'No se pudo cargar el icono: {e}')
         self.create_widget_menu()
@@ -54,7 +61,13 @@ class main():
                 # Cambia el texto del Menubutton
                 self.P_menubutton.config(text=opcion_seleccionada)
                 self.P_control_value.set(opcion_seleccionada)
-            self.P_control_value= tb.StringVar(value="1")
+            
+            # Helper function for the new department Menubutton
+            def actualizar_texto_departamento(opcion_seleccionada):
+                self.P_departamento_menubutton.config(text=opcion_seleccionada)
+                self.P_departamento_selected_value.set(opcion_seleccionada)
+
+            self.P_control_value= tb.StringVar(value="1") # This seems to be for PLU/Codigo, not Unidad. Let's assume it's correct for now.
             self.delete_widgets()
             self.P_id= tb.Label(self.app, text= "Codigo:", font= ("Arial",  int(15 * self.Back.font)), )
             self.P_id_value= tb.Entry(self.app, style= "darkly",width=15)
@@ -73,14 +86,14 @@ class main():
             self.P_cantidad= tb.Label(self.app, text= "Cantidad:", font= ("Arial",  int(15 * self.Back.font)))
             self.P_cantidad_value= tb.Entry(self.app, style= "darkly", font= ("Arial",  int(15 * self.Back.font)), width=7)
 
-            self.P_control_value = tk.StringVar(value="Unidad:")
+            self.P_control_value = tk.StringVar(value="Unidad:") # This is for the Unidad Menubutton
             self.P_menubutton = tb.Menubutton(self.app,textvariable=self.P_control_value, width=9,style= "darkly", )
             self.P_menu_op = tb.Menu(self.P_menubutton)
-            opciones=[ "u","ml","gr", "L",  "Kl",'mg', "Mt", "m³"]
-            for opcion in opciones:
+            opciones_unidad=[ "u","ml","gr", "L",  "Kl",'mg', "Mt", "m³"] # Renamed to opciones_unidad for clarity
+            for opcion in opciones_unidad:
                 self.P_menu_op.add_command(
                     label=opcion,
-                    command=lambda o=opcion: actualizar_texto(o)
+                    command=lambda o=opcion: actualizar_texto(o) # Uses the original actualizar_texto
                 )
 
             self.P_menubutton.config(menu=self.P_menu_op)
@@ -90,8 +103,23 @@ class main():
             barras1=tb.Label(self.app, text="////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////")
             barras2=tb.Label(self.app, text="////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////")
 
-            self.P_departamento= tb.Label(self.app, text= "Deepartamento:", font= ("Arial",  int(15 * self.Back.font)))
-            self.P_departamento_value= tb.Entry(self.app, style= "darkly", width=14, font= ("Arial",  int(15 * self.Back.font)))
+            self.P_departamento= tb.Label(self.app, text= "Departamento:", font= ("Arial",  int(15 * self.Back.font))) # Corrected typo
+            # self.P_departamento_value= tb.Entry(self.app, style= "darkly", width=14, font= ("Arial",  int(15 * self.Back.font))) # Old Entry
+
+            # New Menubutton for Departamento
+            self.P_departamento_selected_value = tk.StringVar(value="Departamento:")
+            self.P_departamento_menubutton = tb.Menubutton(self.app, textvariable=self.P_departamento_selected_value, width=14, style="darkly")
+            self.P_departamento_menu_op = tb.Menu(self.P_departamento_menubutton)
+            
+            # Define department options (customize as needed)
+            opciones_departamento = ["Varios", "Almacen", "Fiambreria", "Panaderia", "Bebidas", "Limpieza", "Perfumeria", "Kiosco", "Frutas y Verduras", "Carniceria"]
+            for opcion_dept in opciones_departamento:
+                self.P_departamento_menu_op.add_command(
+                    label=opcion_dept,
+                    command=lambda o=opcion_dept: actualizar_texto_departamento(o)
+                )
+            self.P_departamento_menubutton.config(menu=self.P_departamento_menu_op)
+
             self.P_pasillo= tb.Label(self.app, text= "Pasillo:", font= ("Arial",  int(15 * self.Back.font)))
             self.P_pasillo_value= tb.Entry(self.app, style= "darkly", font= ("Arial",  int(15 * self.Back.font)), width=14)
             self.P_costo= tb.Label(self.app, text= "Costo s.IVA:", font= ("Arial",  int(15 * self.Back.font)))
@@ -145,10 +173,11 @@ class main():
             self.P_tipo_value.place(relx=0.52, rely=0.27, relheight=0.04, relwidth=0.26) 
             self.P_cantidad.place(relx=0.7871,rely= 0.23)
             self.P_cantidad_value.place(relx= 0.7871, rely=0.27, relheight=0.04, relwidth=0.1)  
-            self.P_menubutton.place(relx=0.9102 ,rely=0.27,relheight=0.040, relwidth=0.075 )
+            self.P_menubutton.place(relx=0.9102 ,rely=0.27,relheight=0.040, relwidth=0.075 ) # This is for Unidad
             barras.place(relx=0, rely=0.3411)
             self.P_departamento.place(relx= 0.0156, rely=0.3906)
-            self.P_departamento_value.place(relx= 0.163, rely=0.3906, relheight=0.04, relwidth=0.14)
+            # self.P_departamento_value.place(relx= 0.163, rely=0.3906, relheight=0.04, relwidth=0.14) # Old placement
+            self.P_departamento_menubutton.place(relx= 0.163, rely=0.3906, relheight=0.04, relwidth=0.14) # New placement
             self.P_pasillo.place(relx=0.0156, rely=0.45)
             self.P_pasillo_value.place(relx=0.163, rely= 0.45, relheight=0.04, relwidth=0.14)
             self.P_costo.place(relx= 0.36, rely=0.3906)
@@ -316,21 +345,50 @@ class main():
     def save(self,status=0):
         command= []
         precio= self.P_precio_value.get()
-        pprecio=precio[2:].replace(",","")
-        if pprecio is None or pprecio== ''or pprecio== 0:
-            messagebox.showinfo("Información", "El precio no puede ser nulo")
+        # Ensure precio is not empty before trying to slice and replace
+        if precio and precio.startswith("$ "):
+            pprecio = precio[2:].replace(",", "")
+        elif precio:
+            pprecio = precio.replace(",", "")
+        else:
+            pprecio = ""
+
+        if not pprecio or float(pprecio) == 0: # Check if pprecio is empty or zero
+            messagebox.showinfo("Información", "El precio no puede ser nulo o cero")
         else:
             dic={'Precio':f'{pprecio}'}
 
             for x in range(len(self.orden)):
-                com=getattr(self, f'P_{self.orden[x]}_value')
-                command.append(com.get())
-                if not (command[x]== '' or x==2 or x==14 or x==16 or x==18):
-                    dic.update({f'{self.colsql[x]}':f'{command[x]}'})
-                elif (not command[x]== '') and (x==14 or x==16 or x==18):
-                    dic.update({f'{self.colsql[x]}':f'{command[x][2:].replace(",","")}'})  
-                elif command[x]=='':
-                    dic.update({f'{self.colsql[x]}':'NULL'})
+                current_field_name = self.orden[x]
+                val = ''
+                if current_field_name == 'departamento':
+                    val = self.P_departamento_selected_value.get()
+                    if val == "Departamento:": # Handle default placeholder value
+                        val = '' 
+                elif current_field_name == 'control': # This corresponds to 'Unidad' in colsql
+                    val = self.P_control_value.get()
+                    if val == "Unidad:": # Handle default placeholder value
+                        val = ''
+                else:
+                    com = getattr(self, f'P_{current_field_name}_value')
+                    val = com.get()
+                
+                command.append(val) # This line seems unused if 'dic' is built directly
+
+                # Logic for populating 'dic'
+                # Ensure val is not empty before trying to slice for prices
+                if not (val == '' or val is None) and (current_field_name in ['precioC1', 'precioC2', 'precioC3']):
+                    if val.startswith("$ "):
+                        processed_val = val[2:].replace(",", "")
+                    else:
+                        processed_val = val.replace(",", "")
+                    dic.update({f'{self.colsql[x]}': f'{processed_val}'})
+                elif not (val == '' or val is None or current_field_name == 'precio'): # 'precio' is already handled
+                    dic.update({f'{self.colsql[x]}':f'{val}'})
+                else: # Handles empty strings and the 'precio' field which is already in dic
+                    if self.colsql[x] not in dic: # Avoid overwriting 'Precio' if val is empty for it
+                         dic.update({f'{self.colsql[x]}':'NULL'})
+            
             dic.update({'Fecha_de_modificacion': f'{date.today()}'})
             self.Back.guardar(dic, self.P_id_value.get(),status=status)
 
@@ -377,40 +435,65 @@ class main():
         for widget in self.app.winfo_children():
             if isinstance(widget, tb.Entry):
                 widget.delete(0, tb.END)
-        self.P_control_value.set('Unidad:') 
+        self.P_control_value.set('Unidad:')
+        if hasattr(self, 'P_departamento_selected_value'): # Check if it exists, as clean might be called before full init
+            self.P_departamento_selected_value.set('Departamento:')
         self.app.bind("<Return>", self.buscar)
         self.app.bind("<Escape>", self.menu) 
         self.disable_entries(exclude=[self.P_id_value])
         self.create_widget_precio(1)
     def agregar_sim(self, status=0, event=None):
-            # Mapear los status a los diferentes Entry widgets
-            entries = {
-                0: self.P_precio_value,
-                1: self.P_precioC1_value,
-                2: self.P_precioC2_value,
-                3: self.P_precioC3_value
-            }
-            
-            # Obtener el Entry correspondiente al status
-            entry = entries.get(status)
-            if not entry:
+        entry_widget = None
+        if status == 0:
+            entry_widget = self.P_precio_value
+        elif status == 1:
+            entry_widget = self.P_precioC1_value
+        elif status == 2:
+            entry_widget = self.P_precioC2_value
+        elif status == 3:
+            entry_widget = self.P_precioC3_value
+        else:
+            # This case should ideally not be reached if status is always 0-3
+            return
+
+        if entry_widget:
+            current_text = entry_widget.get()
+
+            # If the field is empty, do nothing further
+            if not current_text.strip():
+                entry_widget.delete(0, tk.END) # Ensure it's truly empty
                 return
 
-            contenido = entry.get()
-            
-            # Eliminar símbolos de formato existentes
-            raw_value = contenido.replace("$", "").strip()
-            
+            # 1. Clean the input string
+            # Remove currency symbol and leading/trailing spaces
+            cleaned_text = current_text.replace("$", "").strip()
+            # Remove thousands separators (commas)
+            cleaned_text = cleaned_text.replace(",", "")
+
             try:
-                # Intentar convertir a float
-                numeric_value = float(raw_value)
-                # Formatear con 2 decimales y símbolo $
-                formatted = f"$ {format(numeric_value,',.2f')}"
-                entry.delete(0, tk.END)
-                entry.insert(0, formatted)
+                # 2. Convert to float
+                if cleaned_text:  # Proceed only if there's something to convert
+                    price_float = float(cleaned_text)
+
+                    # 3. Format it back with currency symbol and two decimal places
+                    # This will format 3000.0 as "$ 3,000.00"
+                    formatted_price = f"$ {price_float:,.2f}"
+                    
+                    # If you prefer no thousands separator in the display, use:
+                    # formatted_price = f"$ {price_float:.2f}" # This would be "$ 3000.00"
+
+                    # 4. Update the entry widget
+                    entry_widget.delete(0, tk.END)
+                    entry_widget.insert(0, formatted_price)
+                else:
+                    # If the cleaned text becomes empty (e.g., user only typed "$" and spaces)
+                    entry_widget.delete(0, tk.END)
+
             except ValueError:
-                # Si no es número válido, limpiar el campo
-                entry.delete(0, tk.END)
+                # If conversion fails (e.g., input was "abc" or malformed)
+                entry_widget.delete(0, tk.END) # Clear the invalid input
+                messagebox.showerror("Error de Formato", 
+                                     f"'{current_text}' no es un precio válido.\n")
      
     def integral(self,status, event=0):
             entries = {
@@ -462,6 +545,8 @@ class main():
         self.P_borrar.config(state='disabled')
         self.P_borrarOf.config(state='disabled')
         self.P_menubutton.config(state='disabled')
+        if hasattr(self, 'P_departamento_menubutton'):
+            self.P_departamento_menubutton.config(state='disabled')
     def able_entries(self, exclude=[]):
         for widget in self.app.winfo_children():
             if isinstance(widget, tb.Entry) and widget not in exclude:
@@ -471,6 +556,8 @@ class main():
         self.P_borrar.config(state='normal')
         self.P_borrarOf.config(state='normal')
         self.P_menubutton.config(state='normal')
+        if hasattr(self, 'P_departamento_menubutton'):
+            self.P_departamento_menubutton.config(state='normal')
 
     def delete_widgets(self):
         

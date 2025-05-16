@@ -28,6 +28,7 @@ class Logic:
                 "Password": "",
                 "Font": "0.8",
                 "Com": "3",
+                "Escaner": "",
                 "Baudrate": "9600",
                 "AdminPass": "888888",
                 "EntryPass": "1",

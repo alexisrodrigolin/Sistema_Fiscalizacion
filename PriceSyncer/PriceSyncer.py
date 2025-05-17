@@ -1224,6 +1224,7 @@ class main():
                 # Dibuja el borde de la etiqueta
                 c.rect(x, y, LABEL_WIDTH, LABEL_HEIGHT)
 
+                # 
                 # Nombre del producto
                 c.setFont(NOMBRE_FUENTE, TAMANO_TEXTO)
                 nombre = simpleSplit(producto['nombre'], NOMBRE_FUENTE, TAMANO_TEXTO, LABEL_WIDTH - 2 * ESPACIADO)
@@ -1253,7 +1254,7 @@ class main():
                 c.drawCentredString(
                     x + LABEL_WIDTH / 2,
                     y + LABEL_HEIGHT - ZONA_PRECIO,
-                    f"$ {(producto['precio'], ',.2f')}"
+                    f"$ {format(float(producto['precio']), ',.2f')}" # Aseguramos que el precio se formatee correctamente
                 )
 
                 # Precio sin impuestos
@@ -1299,6 +1300,7 @@ class main():
         # Ejemplo de uso
         
     def generar_oferta(self,productos, disposicion, nombre_archivo="ofertas.pdf"):
+
         def formatear_float(num):
             return str(num).rstrip('0').rstrip('.') if '.' in str(num) else str(num)
 
@@ -1398,7 +1400,10 @@ class main():
 
         ancho_etiqueta = (ancho - 2 * margen) / columnas
         alto_etiqueta = (alto - 2 * margen) / filas
-
+        espacio_horizontal = 0.4 * cm  # espacio entre columnas
+        espacio_vertical = 0.4 * cm    # espacio entre filas
+        ancho_etiqueta -= espacio_horizontal
+        alto_etiqueta -= espacio_vertical
         c = canvas.Canvas(nombre_archivo, pagesize=(ancho, alto))
 
         for i, producto in enumerate(productos):
@@ -1408,8 +1413,8 @@ class main():
             if i % (columnas * filas) == 0 and i != 0:
                 c.showPage()
 
-            x = margen + col * ancho_etiqueta
-            y = alto - margen - (fila + 1) * alto_etiqueta
+            x = margen + col * (ancho_etiqueta + espacio_horizontal)
+            y = alto - margen - (fila + 1) * (alto_etiqueta + espacio_vertical)
 
             c.rect(x, y, ancho_etiqueta, alto_etiqueta)
 

@@ -5,14 +5,13 @@ a = Analysis(
     ['PriceSyncer.py'],
     pathex=[],
     binaries=[],
-    datas=[],
-    hiddenimports=[],
+    datas=[('price.ico', '.')],
+    hiddenimports=['mysql.connector.plugins.mysql_native_password'],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
     excludes=[],
     noarchive=False,
-    optimize=0,
 )
 pyz = PYZ(a.pure)
 
@@ -36,4 +35,5 @@ exe = EXE(
     codesign_identity=None,
     entitlements_file=None,
     icon=['price.ico'],
+    version='PriceSyncer.version'
 )

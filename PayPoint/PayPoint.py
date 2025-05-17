@@ -687,7 +687,7 @@ class caja():
             self.resume, 
             text='Facturacion', 
             style="Custom.TButton",
-            command=lambda: self.facturacion_click(status=1, event=event)
+            command=lambda:(self.sim(),self.ppbind(),self.facturacion_click(status=1, event=event))
         )
         self.R_efectivo_valor.place(relx= 0.3244, rely= 0.3945, relwidth=0.17)
         self.R_PagoElec_valor.place(relx= 0.3244, rely= 0.4557, relwidth=0.17)
@@ -763,41 +763,30 @@ class caja():
                     else:
                         self.items(status=2,Re=f"{items[3]*(-1)}*{items[2]}")
 
-    def sim(self,status, event=0):  
+    def sim(self, event=0):  
             
-            if status ==1:
-                widget= self.R_efectivo_valor
-            elif status== 2: 
-                widget= self.R_PagoElec_valor
-            else:
-                widget= self.R_tarjeta_valor
-            contenido = widget.get()  
-            if contenido.startswith("$"):
-                numero = contenido[2:]
-                numero2=contenido[1:]
-                if numero2.replace(".", "", 1).isdigit() and numero2.count(".") < 2:
-                    widget.delete(0, tk.END)  
-                    widget.insert(0, f"$ {format(float(numero2),',.2f')}") 
-                else:
-                    if numero.replace(".", "", 1).isdigit() and numero.count(".") < 2:
-                        widget.delete(0, tk.END)  
-                        widget.insert(0, f"$ {format(float(numero2),',.2f')}")
-                    else:
-                        widget.delete(0, tk.END)  
-            elif contenido.isdigit() or (contenido.replace(".", "", 1).isdigit() and contenido.count(".") < 2):
-                widget.delete(0, tk.END)  
-                widget.insert(0, f"$ {format(float(contenido ),',.2f')}") 
-            else:
-                widget.delete(0, tk.END)
-            self.R_suma=0
-            for x in (self.R_efectivo_valor, self.R_PagoElec_valor, self.R_tarjeta_valor):
-                val=x.get()
-                result= float(val[2:].replace(',','')) if not val == "" else 0
-                self.R_suma+= result
-            R_vueltos= self.R_suma - self.Bend.subtotal
-            self.R_vuelto_valor.config(text= f"$ {format(R_vueltos,',.2f')}")
-            self.R_monto_valor.config(text= f"$ {format(self.R_suma,',.2f')}")
+            widgets = [self.R_efectivo_valor, self.R_PagoElec_valor, self.R_tarjeta_valor]
+            self.R_suma = 0  # Reset total
+            for widget in widgets:
+                contenido = widget.get().strip()
+                
+                if contenido.startswith("$"):
+                    contenido = contenido[1:].strip()
 
+                # Remueve la coma para poder convertir correctamente
+                valor_limpio = contenido.replace(",", "")
+                # Intentar convertir a float y formatear
+                try:
+                    numero = float(valor_limpio)
+                    widget.delete(0, tk.END)
+                    widget.insert(0, f"$ {format(numero, ',.2f')}")
+                    self.R_suma += numero
+                except ValueError:
+                    widget.delete(0, tk.END)  # Limpia campo inválido
+
+            R_vueltos = self.R_suma - self.Bend.subtotal
+            self.R_vuelto_valor.config(text=f"$ {format(R_vueltos, ',.2f')}")
+            self.R_monto_valor.config(text=f"$ {format(self.R_suma, ',.2f')}")
     def resumeBind(self):
         def bon(event=0):
             rec= int(self.R_recargo_valor.get()) if self.R_recargo_valor.get().isdigit() else 0
@@ -815,16 +804,16 @@ class caja():
                                   foreground='#847C67').place(relx=0.54, rely=0.35)
         self.R_efectivo_valor.bind("<Return>", lambda event : self.enter_as_tab(event))
         self.R_PagoElec_valor.bind("<Return>", lambda event : self.enter_as_tab(event))
-        self.R_tarjeta_valor.bind("<Return>", lambda event: (self.sim(3, event),self.resume.focus_force(), 
+        self.R_tarjeta_valor.bind("<Return>", lambda event: (self.sim(event),self.resume.focus_force(), 
                                                              self.ppbind(),self.facturacion_click(status=1, event=event)))
-        self.R_efectivo_valor.bind("<FocusOut>", lambda event: self.sim(1, event))
-        self.R_PagoElec_valor.bind("<FocusOut>", lambda event: self.sim(2, event))
-        self.R_tarjeta_valor.bind("<FocusOut>", lambda event: self.sim(3, event))
+        self.R_efectivo_valor.bind("<FocusOut>", lambda event: self.sim(event))
+        self.R_PagoElec_valor.bind("<FocusOut>", lambda event: self.sim(event))
+        self.R_tarjeta_valor.bind("<FocusOut>", lambda event: self.sim(event))
         self.R_recargo_valor.bind("<FocusOut>", lambda event: bon(event))
         self.R_bonificacion_valor.bind("<FocusOut>", lambda event: bon(event))
-        self.app.bind("<F4>", lambda event: (self.ppbind(),self.facturacion_click(status=1, event=event)))
-        self.app.bind("<F5>", lambda event: (self.ppbind(),self.facturacion_click(status=2, event=event)))
-        self.app.bind("<F6>", lambda event: (self.ppbind(),self.facturacion_click(status=2, event=event)))
+        self.app.bind("<F4>", lambda event: (self.sim(),self.ppbind(),self.facturacion_click(status=1, event=event)))
+        self.app.bind("<F5>", lambda event: (self.sim(),self.ppbind(),self.facturacion_click(status=2, event=event)))
+        self.app.bind("<F6>", lambda event: (self.sim(),self.ppbind(),self.facturacion_click(status=2, event=event)))
         self.app.bind("<Escape>", lambda event: (self.resume.destroy(), self.ppbind()))
     def call(self, command,extra=0, extra1=0, event=0):
         if command == 'tique':

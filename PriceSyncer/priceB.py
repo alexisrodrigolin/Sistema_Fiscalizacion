@@ -75,8 +75,11 @@ class connection():
             instruction= f"INSERT INTO Art (PLU, Precio,Fecha_de_modificacion) VALUES('{codigo}','0','{date.today()}')"
             self.cursor.execute(instruction)
             self.mydb.commit()
-    
+    def delete(self, id):
+            self.cursor.execute(f"DELETE FROM art WHERE id={id}")
+            self.mydb.commit()
     def guardar(self, dic,id, status=0):
+
         net=''
         for clave, valor in dic.items():
             if valor =='NULL':
@@ -97,7 +100,10 @@ class connection():
             else: 
                 self.cursor.execute(instructionSEti)
                 self.mydb.commit()
-
+        elif status==0:
+            self.cursor.execute(f"DELETE FROM etiq WHERE id={id}")
+            self.cursor.execute(f"DELETE FROM Setiq WHERE id={id}")
+            self.mydb.commit()
     def validate_user(self, username, password):
         return self.valid_users.get(username) == password
 

@@ -112,7 +112,7 @@ class main():
             self.P_departamento_menu_op = tb.Menu(self.P_departamento_menubutton)
             
             # Define department options (customize as needed)
-            opciones_departamento = ["Varios", "Almacen", "Fiambreria", "Panaderia", "Bebidas", "Limpieza", "Perfumeria", "Kiosco", "Frutas y Verduras", "Carniceria"]
+            opciones_departamento = ["Bazar","Lacteos","Congelados","Golosinas", "Almacen","Galletitas", "Fiambreria", "Panaderia", "Bebidas", "Limpieza", "Perfumeria", "Golosinas", "Frutas y Verduras", "Carniceria"]
             for opcion_dept in opciones_departamento:
                 self.P_departamento_menu_op.add_command(
                     label=opcion_dept,
@@ -133,19 +133,19 @@ class main():
             self.P_preCan= tb.Label(self.app, text= f"<<<Precio por Cantidad>>>", font= ("Arial",  int(15 * self.Back.font)))
             self.P_cantidad1= tb.Label(self.app, text= "Cantidad 1:", font= ("Arial",  int(15 * self.Back.font)))
             self.P_cantidad1_value= tb.Entry(self.app, style= "darkly", width=7, font= ("Arial",  int(15 * self.Back.font)))
-            self.P_cantidad2= tb.Label(self.app, text= "Cantidad 2:", font= ("Arial",  int(15 * self.Back.font)))
-            self.P_cantidad2_value= tb.Entry(self.app, style= "darkly", font= ("Arial",  int(15 * self.Back.font)), width=7)
-            self.P_cantidad3= tb.Label(self.app, text= "Cantidad 3:", font= ("Arial",  int(15 * self.Back.font)))
-            self.P_cantidad3_value= tb.Entry(self.app, style= "darkly", font= ("Arial",  int(15 * self.Back.font)), width=7)
             self.P_precioC1= tb.Label(self.app, text= "Precio x Uni:", font= ("Arial",  int(15 * self.Back.font)))
             self.P_precioC1_value= tb.Entry(self.app, style= "darkly", font= ("Arial",  int(15 * self.Back.font)), width=7)
+            self.P_cantidad2= tb.Label(self.app, text= "Cantidad 2:", font= ("Arial",  int(15 * self.Back.font)))
+            self.P_cantidad2_value= tb.Entry(self.app, style= "darkly", font= ("Arial",  int(15 * self.Back.font)), width=7)
             self.P_precioC2= tb.Label(self.app, text= "Precio x Uni:", font= ("Arial",  int(15 * self.Back.font)))
             self.P_precioC2_value= tb.Entry(self.app, style= "darkly", font= ("Arial",  int(15 * self.Back.font)), width=7)
+            self.P_cantidad3= tb.Label(self.app, text= "Cantidad 3:", font= ("Arial",  int(15 * self.Back.font)))
+            self.P_cantidad3_value= tb.Entry(self.app, style= "darkly", font= ("Arial",  int(15 * self.Back.font)), width=7)
             self.P_precioC3= tb.Label(self.app, text= "Precio x Uni:", font= ("Arial",  int(15 * self.Back.font)))
             self.P_precioC3_value= tb.Entry(self.app, style= "darkly", font= ("Arial",int(15 * self.Back.font)), width=7)
             self.P_guardar= tb.Button(self.app, text="Guardar y emitir", bootstyle="warning-outline",command= lambda:self.save(status=1))
             self.P_guardarSin= tb.Button(self.app, text="Guadar sin emitir", bootstyle="warning-outline",command=self.save)
-            self.P_borrar= tb.Button(self.app, text="Borrar", bootstyle="warning-outline")
+            self.P_borrar= tb.Button(self.app, text="Borrar", bootstyle="warning-outline",command=self.delete_row)
             self.P_menu= tb.Button(self.app, text="Menu", bootstyle="warning-outline", command= self.menu)
             self.P_borrarOf= tb.Button(self.app, text="Borrar Oferta", bootstyle="warning-link", command=self.borrarOf)
             self.P_buscar= tb.Button(self.app, text="Buscar", bootstyle="warning-outline",command=self.SearchByName)
@@ -191,14 +191,14 @@ class main():
             self.P_preCan.place(relx= 0.0273, rely= 0.5664)
             self.P_cantidad1.place(relx=0.0156, rely=0.63)
             self.P_cantidad1_value.place(relx=0.135, rely=0.63, relheight=0.04, relwidth=0.14)
-            self.P_cantidad2.place(relx=0.3369, rely=0.63)
-            self.P_cantidad2_value.place(relx=0.455, rely=0.63, relheight=0.04, relwidth=0.14)
-            self.P_cantidad3.place(relx=0.6719, rely=0.63)
-            self.P_cantidad3_value.place(relx=0.79, rely=0.63, relheight=0.04, relwidth=0.14)
             self.P_precioC1.place(relx=0.0156, rely=0.6914)
             self.P_precioC1_value.place(relx=0.135, rely=0.6914, relheight=0.04, relwidth=0.14)
+            self.P_cantidad2.place(relx=0.3369, rely=0.63)
+            self.P_cantidad2_value.place(relx=0.455, rely=0.63, relheight=0.04, relwidth=0.14)
             self.P_precioC2.place(relx=0.3369, rely=0.6914)
             self.P_precioC2_value.place(relx=0.455, rely=0.6914, relheight=0.04, relwidth=0.14)
+            self.P_cantidad3.place(relx=0.6719, rely=0.63)
+            self.P_cantidad3_value.place(relx=0.79, rely=0.63, relheight=0.04, relwidth=0.14) 
             self.P_precioC3.place(relx=0.6719, rely=0.6914)
             self.P_precioC3_value.place(relx=0.79, rely=0.6914, relheight=0.04, relwidth=0.14)
             barras2.place(relx=0, rely=0.7917)
@@ -219,7 +219,6 @@ class main():
                         'Departamento', 'Pasillo', 'Costo','IVA', 'Ganancia', 
                         "Cant1",'Precio1', 'Cant2', 'Precio2','Cant3', 'Precio3']  
         self.disable_entries(exclude=[self.P_id_value])
-        
         self.P_precio_value.bind("<FocusOut>", lambda event:self.agregar_sim(status=0, event=event))
         self.P_precioC1_value.bind("<FocusOut>", lambda event:self.agregar_sim(status=1, event=event))
         self.P_precioC2_value.bind("<FocusOut>", lambda event:self.agregar_sim(status=2, event=event))
@@ -227,11 +226,15 @@ class main():
         self.P_cantidad1_value.bind("<FocusOut>", lambda event:self.integral(status=1, event=event))
         self.P_cantidad2_value.bind("<FocusOut>", lambda event:self.integral(status=2, event=event))
         self.P_cantidad3_value.bind("<FocusOut>", lambda event:self.integral(status=3, event=event))
+        self.P_costo_value.bind("<FocusOut>", self.actualizar_precioSug)
+        self.P_iva_value.bind("<FocusOut>", self.actualizar_precioSug)
+        self.P_ganancia_value.bind("<FocusOut>", self.actualizar_precioSug)
         self.app.bind("<Escape>", self.menu)  
         self.app.bind("<Return>", self.buscar)  
         self.app.bind("<F1>", self.SearchByName)
         self.app.bind("<F2>", self.save)
         self.app.bind("<F3>", lambda:self.save(status=1))
+        self.app.bind("<F4>",self.delete_row)
         self.P_id_value.focus_set()
     def SearchByName(self,event=0):
             def select(event=0):
@@ -341,7 +344,13 @@ class main():
         for x in Of:
             command= getattr(self, f'P_{x}_value')
             command.delete(0, tb.END)
-
+    def delete_row(self):
+        confirm= messagebox.askokcancel("confirm","Desea Borrar el Articulo")
+        if confirm:
+            self.Back.delete(self.P_id_value.get())
+            self.clean()
+        else:
+            return
     def save(self,status=0):
         command= []
         precio= self.P_precio_value.get()
@@ -426,11 +435,13 @@ class main():
                     continue
             self.P_fecha.config(text=f'Fecha de Modificacion: {result[20]}')
             self.P_precio_value.focus()
+            self.actualizar_precioSug()
         else:
             self.buscar(Re=value) 
                   
     def clean(self, event=0):
         self.P_fecha.config(text="Fecha de Modificacion: ")
+        self.P_preReco.config(text="Precio recomendado \n para venta: $ ")
         self.P_id_value.config(state= 'normal')
         for widget in self.app.winfo_children():
             if isinstance(widget, tb.Entry):
@@ -655,6 +666,34 @@ class main():
             error_window.attributes("-topmost", True) 
             error_window.grab_set()
             error_window.wait_window()
+    def actualizar_precioSug(self):
+        
+# 获取成本值并验证是否为数字
+        costo = self.P_costo_value.get().replace('.','',1).replace(',','').replace('$','',1)
+        if not costo.isdigit():
+            self.P_costo_value.delete(0, tk.END)
+            costo=0
+            return
+
+        # 获取IVA值并验证是否为数字 
+        iva = self.P_iva_value.get().replace('.','',1)
+        if not iva.isdigit():
+            self.P_iva_value.delete(0, tk.END)
+            iva=0
+            return
+
+        # 获取利润值并验证是否为数字
+        ganancia = self.P_ganancia_value.get().replace('.','',1)
+        if not ganancia.isdigit():
+            self.P_ganancia_value.delete(0, tk.END)
+            ganancia=0
+            return
+        sug = (float(costo)* float(iva))* float(ganancia)
+        if sug==0:
+            return
+        else:
+            self.P_preReco.config(text= f"Precio recomendado \n para venta: $ {format(sug, ',.2f')}")
+
     def conf(self, status=0):
         cfg= tk.Frame(self.app, )
         cfg.place(relx=0, rely=0, relheight=1, relwidth=1)
@@ -851,6 +890,7 @@ class main():
                                         chk.configure(state="disabled")
                                     else:
                                         chk.configure(state="normal")
+        
         def actualizar_treeview():
                 for item_id, vars_list in check_dict.items():
                     if any(var.get() for var in vars_list):  # Si al menos un Checkbutton está activado
@@ -1115,7 +1155,7 @@ class main():
         ZONA_PRECIO = 1.6 * cm    # Ajustado
         ZONA_CODIGO = 2.2 * cm    # Ajustado
 
-        def generar_codigo_barras(codigo):
+        def generar_codigo_barras(codigo): ## version=> win 10
             try:
                 codigo = str(codigo).strip()
                 if not codigo:
@@ -1164,7 +1204,8 @@ class main():
                         return nombre_archivo
                     except:
                         raise ValueError(f"No se pudo generar ningún código de barras: {str(e)}")
-
+        ESPACIADO_HORIZONTAL = 0.3 * cm
+        ESPACIADO_VERTICAL = 0.3 * cm       
         def crear_etiquetas():
             c = canvas.Canvas("etiquetas_precios.pdf", pagesize=A4)
 
@@ -1176,9 +1217,9 @@ class main():
                 columna = i % 3
                 fila = (i // 3) % ROWS_PER_PAGE
 
-                # Coordenadas base de cada etiqueta
-                x = MARGIN_LEFT + columna * LABEL_WIDTH
-                y = PAGE_HEIGHT - LABEL_HEIGHT - fila * LABEL_HEIGHT - 1 * cm
+                    # Coordenadas base de cada etiqueta
+                x = MARGIN_LEFT + columna * (LABEL_WIDTH + ESPACIADO_HORIZONTAL)
+                y = PAGE_HEIGHT - LABEL_HEIGHT - fila * (LABEL_HEIGHT + ESPACIADO_VERTICAL) - 1 * cm
 
                 # Dibuja el borde de la etiqueta
                 c.rect(x, y, LABEL_WIDTH, LABEL_HEIGHT)
@@ -1212,7 +1253,7 @@ class main():
                 c.drawCentredString(
                     x + LABEL_WIDTH / 2,
                     y + LABEL_HEIGHT - ZONA_PRECIO,
-                    f"$ {format(producto['precio'], ',.2f')}"
+                    f"$ {(producto['precio'], ',.2f')}"
                 )
 
                 # Precio sin impuestos

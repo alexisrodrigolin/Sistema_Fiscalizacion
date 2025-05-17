@@ -824,7 +824,7 @@ class caja():
         self.R_bonificacion_valor.bind("<FocusOut>", lambda event: bon(event))
         self.app.bind("<F4>", lambda event: (self.ppbind(),self.facturacion_click(status=1, event=event)))
         self.app.bind("<F5>", lambda event: (self.ppbind(),self.facturacion_click(status=2, event=event)))
-        self.app.bind("<F6>", lambda event: (self.ppbind(),self.facturacion_click(status=3, event=event)))
+        self.app.bind("<F6>", lambda event: (self.ppbind(),self.facturacion_click(status=2, event=event)))
         self.app.bind("<Escape>", lambda event: (self.resume.destroy(), self.ppbind()))
     def call(self, command,extra=0, extra1=0, event=0):
         if command == 'tique':
